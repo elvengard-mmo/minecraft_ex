@@ -8,4 +8,5 @@ defmodule MinecraftEx.ClientPackets do
   import_packets MinecraftEx.Client.HandshakePackets
   import_packets MinecraftEx.Client.LoginPackets
   import_packets MinecraftEx.Client.ConfigurationPackets
+  import_packets MinecraftEx.Client.PlayPackets
 end
