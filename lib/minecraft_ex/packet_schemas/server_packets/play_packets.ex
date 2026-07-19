@@ -21,9 +21,9 @@ defmodule MinecraftEx.Server.PlayPackets do
 
   ## Play packets
 
-  # 0x29 Login
+  # 0x31 Login
   @serializable true
-  defpacket 0x29, as: Login do
+  defpacket 0x31, as: Login do
     field :entity_id, Int
     field :is_hardcore, Boolean
     field :dimensions, Array, type: Identifier
@@ -33,7 +33,7 @@ defmodule MinecraftEx.Server.PlayPackets do
     field :reduced_debug_info, Boolean
     field :enable_respawn_screen, Boolean
     field :limited_crafting, Boolean
-    field :dimension_type, Identifier
+    field :dimension_type, VarInt
     field :dimension_name, Identifier
     field :hashed_seed, Long
 
@@ -51,5 +51,8 @@ defmodule MinecraftEx.Server.PlayPackets do
     field :death_dimension_name, Identifier, if: packet.has_death_location
     field :death_location, Position, if: packet.has_death_location
     field :portal_cooldown, VarInt
+    field :sea_level, VarInt
+    field :online_mode, Boolean
+    field :enforces_secure_chat, Boolean
   end
 end

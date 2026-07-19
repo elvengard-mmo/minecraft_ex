@@ -6,6 +6,7 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
   alias ElvenGard.Network.Socket
 
   alias MinecraftEx.Client.ConfigurationPackets.{
+    AcknowledgeFinishConfiguration,
     KnownPacks,
     PluginMessage
   }
@@ -89,5 +90,34 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
     {_packet_length, packet} = VarInt.decode(encoded_tags)
     {packet_id, _body} = VarInt.decode(packet)
     assert packet_id == 0x0D
+
+    assert_receive {:sent, encoded_finish}
+    {_packet_length, packet} = VarInt.decode(encoded_finish)
+    {packet_id, <<>>} = VarInt.decode(packet)
+    assert packet_id == 0x03
+  end
+
+  test "enters play with the confirmed initial state" do
+    socket = %Socket{
+      adapter: Adapter,
+      adapter_state: self(),
+      encoder: NetworkCodec,
+      assigns: %{state: :configuration, enc_key: nil}
+    }
+
+    assert {:cont, new_socket} =
+             Configuration.handle_packet(%AcknowledgeFinishConfiguration{}, socket)
+
+    assert new_socket.assigns.state == :play
+
+    assert_receive {:sent, encoded_login}
+    {_packet_length, packet} = VarInt.decode(encoded_login)
+    {packet_id, body} = VarInt.decode(packet)
+
+    assert packet_id == 0x31
+
+    assert body ==
+             <<1::32, 0, 1, 19, "minecraft:overworld", 100, 10, 10, 0, 1, 0, 0, 19,
+               "minecraft:overworld", 0::64, 1, 255, 0, 0, 0, 0, 63, 1, 0>>
   end
 end
