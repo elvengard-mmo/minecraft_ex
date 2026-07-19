@@ -1,8 +1,9 @@
 defmodule MinecraftEx.PacketHandlers.PlayTest do
   use ExUnit.Case, async: true
 
+  alias ElvenGard.ECS
+  alias ElvenGard.ECS.{Command, Query}
   alias ElvenGard.Network.Socket
-  alias MinecraftEx.Endpoint.NetworkCodec
 
   alias MinecraftEx.Client.PlayPackets.{
     AcceptTeleportation,
@@ -18,20 +19,15 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
     PlayerLoaded
   }
 
+  alias MinecraftEx.ECS.Bundles.Player
+  alias MinecraftEx.ECS.Components.Session
+  alias MinecraftEx.ECS.WorldPartition
   alias MinecraftEx.Mojang.ServicesKeySet
   alias MinecraftEx.PacketHandlers.Play
-  alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate, UUID, VarInt}
+  alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate, UUID}
+  alias MinecraftEx.World.Flat
 
   @player_uuid "00010203-0405-0607-0809-0a0b0c0d0e0f"
-
-  ## Test adapter
-
-  defmodule Adapter do
-    def send(test_process, data) do
-      Kernel.send(test_process, {:sent, IO.iodata_to_binary(data)})
-      :ok
-    end
-  end
 
   ## Tests
 
@@ -65,43 +61,38 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   end
 
   test "accepts Client Tick End without changing the socket" do
-    socket = %Socket{
-      assigns: %{
-        state: :play,
-        last_keep_alive_at: System.monotonic_time(:millisecond),
-        pending_keep_alive_id: nil
-      }
-    }
+    socket = %Socket{assigns: %{state: :play}}
 
     assert {:cont, ^socket} = Play.handle_packet(%ClientTickEnd{}, socket)
   end
 
-  test "sends a Keep Alive after 15 seconds and accepts the matching response" do
-    socket = %Socket{
-      adapter: Adapter,
-      adapter_state: self(),
-      encoder: NetworkCodec,
-      assigns: %{
-        state: :play,
-        enc_key: nil,
-        last_keep_alive_at: System.monotonic_time(:millisecond) - 15_000,
-        pending_keep_alive_id: nil
-      }
-    }
+  test "routes Keep Alive responses without storing session state on the socket" do
+    player_spec =
+      Player.new(
+        uuid: ElvenGard.ECS.UUID.uuid4(),
+        connection_pid: self(),
+        partition: WorldPartition.id(Flat)
+      )
 
-    assert {:cont, waiting_socket} = Play.handle_packet(%ClientTickEnd{}, socket)
-    keep_alive_id = waiting_socket.assigns.pending_keep_alive_id
-    assert is_integer(keep_alive_id)
+    {:ok, {player_entity, _components}} = Command.spawn_entity(player_spec)
+    on_exit(fn -> Command.despawn_entity(player_entity) end)
 
-    assert_receive {:sent, encoded}
-    {_packet_length, packet} = VarInt.decode(encoded)
-    assert {0x2C, <<^keep_alive_id::signed-64>>} = VarInt.decode(packet)
+    assert {:ok, _session} =
+             Command.update_component(player_entity, Session,
+               last_keep_alive_at: ECS.now(),
+               pending_keep_alive_id: 42
+             )
 
-    assert {:cont, responded_socket} =
-             Play.handle_packet(%KeepAlive{id: keep_alive_id}, waiting_socket)
+    socket = %Socket{assigns: %{state: :play, player_entity: player_entity}}
 
-    assert responded_socket.assigns.pending_keep_alive_id == nil
-    assert responded_socket.assigns.latency_ms >= 0
+    assert {:cont, ^socket} = Play.handle_packet(%KeepAlive{id: 42}, socket)
+
+    assert_eventually(fn ->
+      case Query.fetch_component(player_entity, Session) do
+        {:ok, %Session{pending_keep_alive_id: nil}} -> true
+        {:ok, %Session{}} -> false
+      end
+    end)
   end
 
   test "accepts the expected initial teleportation and chunk batch" do
@@ -197,6 +188,23 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   end
 
   ## Private functions
+
+  defp assert_eventually(assertion, attempts \\ 200)
+
+  defp assert_eventually(assertion, attempts) when attempts > 0 do
+    case assertion.() do
+      true ->
+        :ok
+
+      false ->
+        Process.sleep(10)
+        assert_eventually(assertion, attempts - 1)
+    end
+  end
+
+  defp assert_eventually(_assertion, 0) do
+    flunk("condition did not become true")
+  end
 
   defp generate_key_pair(bits) do
     private_key = :public_key.generate_key({:rsa, bits, 65_537})

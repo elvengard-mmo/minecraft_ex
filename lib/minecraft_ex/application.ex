@@ -5,14 +5,23 @@ defmodule MinecraftEx.Application do
 
   use Application
 
+  alias ElvenGard.ECS.Topology.EventSource
   alias MinecraftEx.{Crypto, Protocol}
+  alias MinecraftEx.ECS.{SystemPartition, WorldPartition}
   alias MinecraftEx.Mojang.ServicesKeySet
+  alias MinecraftEx.World.Flat
 
   ## Application behaviour
 
   @impl true
   def start(_type, _args) do
-    children = [ServicesKeySet, MinecraftEx.Endpoint]
+    children = [
+      EventSource,
+      SystemPartition,
+      {WorldPartition, id: WorldPartition.id(Flat)},
+      ServicesKeySet,
+      MinecraftEx.Endpoint
+    ]
 
     # Setup protocol-wide state
     _ = Crypto.setup!()

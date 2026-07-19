@@ -8,6 +8,7 @@ defmodule MinecraftEx.PacketHandlers.Play do
   import Bitwise, only: [{:&&&, 2}]
   import ElvenGard.Network.Socket, only: [assign: 2]
 
+  alias ElvenGard.ECS
   alias MinecraftEx.ChatSecurity
 
   alias MinecraftEx.Client.PlayPackets.{
@@ -16,6 +17,7 @@ defmodule MinecraftEx.PacketHandlers.Play do
     ChatSessionUpdate,
     ChunkBatchReceived,
     ClientTickEnd,
+    KeepAlive,
     MovePlayerPosition,
     MovePlayerPositionAndRotation,
     MovePlayerRotation,
@@ -25,6 +27,8 @@ defmodule MinecraftEx.PacketHandlers.Play do
     PlayerLoaded
   }
 
+  alias MinecraftEx.ECS.Events.KeepAliveReceived
+  alias MinecraftEx.ECS.SystemPartition
   alias MinecraftEx.Mojang.ServicesKeySet
   alias MinecraftEx.Types.ChatSession
 
@@ -112,6 +116,15 @@ defmodule MinecraftEx.PacketHandlers.Play do
   end
 
   def handle_packet(%ClientTickEnd{}, socket) do
+    {:cont, socket}
+  end
+
+  def handle_packet(%KeepAlive{} = packet, socket) do
+    %KeepAlive{id: id} = packet
+    %{player_entity: player_entity} = socket.assigns
+    event = %KeepAliveReceived{entity: player_entity, id: id}
+    {:ok, [_event]} = ECS.push(event, partition: SystemPartition.id())
+
     {:cont, socket}
   end
 

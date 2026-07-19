@@ -7,6 +7,7 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
 
   import ElvenGard.Network.Socket, only: [assign: 2]
 
+  alias ElvenGard.ECS.Command
   alias ElvenGard.Network.Socket
 
   alias MinecraftEx.Client.ConfigurationPackets.{
@@ -19,6 +20,8 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   alias MinecraftEx.PacketViews
   alias MinecraftEx.Protocol
   alias MinecraftEx.Resources
+  alias MinecraftEx.ECS.Bundles.Player
+  alias MinecraftEx.ECS.WorldPartition
   alias MinecraftEx.Types.{KnownPack, MCString}
   alias MinecraftEx.World.Flat
 
@@ -79,16 +82,25 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
 
   def handle_packet(%AcknowledgeFinishConfiguration{}, socket) do
     spawn_position = Flat.spawn_position()
+    %{connection_pid: connection_pid, uuid: uuid} = socket.assigns
+
+    player_spec =
+      Player.new(
+        uuid: uuid,
+        connection_pid: connection_pid,
+        partition: WorldPartition.id(Flat)
+      )
+
+    {:ok, {player_entity, _components}} = Command.spawn_entity(player_spec)
 
     new_socket =
       assign(socket,
         state: :play,
+        player_entity: player_entity,
         pending_teleport_id: Flat.teleport_id(),
         player_position: {spawn_position.x, spawn_position.y, spawn_position.z},
         player_rotation: {spawn_position.yaw, spawn_position.pitch},
-        client_loaded: false,
-        last_keep_alive_at: System.monotonic_time(:millisecond),
-        pending_keep_alive_id: nil
+        client_loaded: false
       )
 
     render = PacketViews.render(:play_login, initial_play_state())

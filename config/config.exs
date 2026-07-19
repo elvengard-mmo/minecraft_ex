@@ -19,3 +19,7 @@ config :minecraft_ex, MinecraftEx.Endpoint,
 config :minecraft_ex, MinecraftEx.Endpoint.SocketHandler,
   packet_handler: MinecraftEx.Endpoint.PacketHandler,
   network_codec: MinecraftEx.Endpoint.NetworkCodec
+
+if config_env() == :test do
+  import_config "test.exs"
+end

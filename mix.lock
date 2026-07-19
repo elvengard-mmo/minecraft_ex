@@ -1,5 +1,7 @@
 %{
-  "elvengard_network": {:git, "https://github.com/elvengard-mmo/elvengard_network.git", "bb66cf34fb5e279fd0c7384ca4be3ebad559c4a5", []},
+  "elvengard_ecs": {:git, "https://github.com/elvengard-mmo/elvengard_ecs.git", "2504114614eb41d937c2bebff27568d1df16fb44", []},
+  "elvengard_network": {:git, "https://github.com/elvengard-mmo/elvengard_network.git", "fdcf3e6d2881b3c37af62917adbffff96d5e9a95", []},
   "ranch": {:hex, :ranch, "2.2.0", "25528f82bc8d7c6152c57666ca99ec716510fe0925cb188172f41ce93117b1b0", [:make, :rebar3], [], "hexpm", "fa0b99a1780c80218a4197a59ea8d3bdae32fbff7e88527d7d8a4787eff4f8e7"},
   "simple_enum": {:hex, :simple_enum, "1.0.0", "487ec4de4d10460b6a819ee8e64ee02fca38536af8448fc810f0ed42ef5ec835", [:mix], [], "hexpm", "2b5788c38b76f11bf18d3c65fc329e819dc047e67d84128f3fe898f809df12d7"},
+  "telemetry": {:hex, :telemetry, "1.4.2", "a0cb522801dffb1c49fe6e30561badffc7b6d0e180db1300df759faa22062855", [:rebar3], [], "hexpm", "928f6495066506077862c0d1646609eed891a4326bee3126ba54b60af61febb1"},
 }

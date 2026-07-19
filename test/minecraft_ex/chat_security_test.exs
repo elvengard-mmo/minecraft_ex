@@ -1,5 +1,5 @@
 defmodule MinecraftEx.ChatSecurityTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias MinecraftEx.ChatSecurity
   alias MinecraftEx.Client.PlayPackets.ChatMessage

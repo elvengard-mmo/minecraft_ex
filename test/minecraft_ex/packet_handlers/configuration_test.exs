@@ -3,6 +3,7 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
 
   import ExUnit.CaptureLog
 
+  alias ElvenGard.ECS.{Command, Query}
   alias ElvenGard.Network.Socket
 
   alias MinecraftEx.Client.ConfigurationPackets.{
@@ -13,7 +14,10 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
 
   alias MinecraftEx.PacketHandlers.Configuration
   alias MinecraftEx.Endpoint.NetworkCodec
+  alias MinecraftEx.ECS.Components.Session
+  alias MinecraftEx.ECS.WorldPartition
   alias MinecraftEx.Types.{KnownPack, VarInt}
+  alias MinecraftEx.World.Flat
 
   ## Test adapter
 
@@ -102,7 +106,12 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
       adapter: Adapter,
       adapter_state: self(),
       encoder: NetworkCodec,
-      assigns: %{state: :configuration, enc_key: nil}
+      assigns: %{
+        state: :configuration,
+        enc_key: nil,
+        connection_pid: self(),
+        uuid: "10010203-0405-0607-0809-0a0b0c0d0e0f"
+      }
     }
 
     assert {:cont, new_socket} =
@@ -111,8 +120,16 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
     assert new_socket.assigns.state == :play
     assert new_socket.assigns.pending_teleport_id == 1
     assert new_socket.assigns.player_position == {0.5, 64.0, 0.5}
-    assert new_socket.assigns.pending_keep_alive_id == nil
-    assert is_integer(new_socket.assigns.last_keep_alive_at)
+
+    player_entity = new_socket.assigns.player_entity
+    on_exit(fn -> Command.despawn_entity(player_entity) end)
+
+    assert {:ok, world_partition_id} = Query.partition(player_entity)
+    assert world_partition_id == WorldPartition.id(Flat)
+    assert {:ok, session} = Query.fetch_component(player_entity, Session)
+    assert session.connection_pid == self()
+    assert session.pending_keep_alive_id == nil
+    assert is_integer(session.last_keep_alive_at)
 
     assert_receive {:sent, encoded_login}
     {_packet_length, packet} = VarInt.decode(encoded_login)

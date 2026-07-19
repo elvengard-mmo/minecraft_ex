@@ -22,6 +22,7 @@ defmodule MinecraftEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:elvengard_ecs, github: "elvengard-mmo/elvengard_ecs"},
       {:elvengard_network, github: "elvengard-mmo/elvengard_network"},
       {:ranch, "~> 2.2"},
       {:simple_enum, "~> 1.0"}
