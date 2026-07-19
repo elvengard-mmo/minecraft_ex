@@ -106,7 +106,7 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
       portal_cooldown: 0,
       sea_level: 63,
       online_mode: true,
-      enforces_secure_chat: false
+      enforces_secure_chat: true
     }
   end
 end

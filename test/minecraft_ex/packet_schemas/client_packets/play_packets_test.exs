@@ -3,7 +3,7 @@ defmodule MinecraftEx.Client.PlayPacketsTest do
 
   alias ElvenGard.Network.Socket
   alias MinecraftEx.Client.PlayPackets
-  alias MinecraftEx.Types.ChatSession
+  alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate}
 
   ## Tests
 
@@ -28,5 +28,27 @@ defmodule MinecraftEx.Client.PlayPacketsTest do
     packet = PlayPackets.deserialize(0x0D, <<>>, socket)
 
     assert packet.__struct__ == MinecraftEx.Client.PlayPackets.ClientTickEnd
+  end
+
+  test "decodes a signed Chat Message on its 26.2 packet id" do
+    signature = :binary.copy(<<0xAB>>, 256)
+
+    data =
+      <<2, "hi", 1_800_000_000_123::signed-64, 42::signed-64, 1, signature::binary, 0, 0, 0, 0,
+        1>>
+
+    socket = %Socket{assigns: %{state: :play}}
+    packet = PlayPackets.deserialize(0x09, data, socket)
+
+    assert packet.message == "hi"
+    assert packet.timestamp == 1_800_000_000_123
+    assert packet.salt == 42
+    assert packet.signature == signature
+
+    assert packet.last_seen_messages == %LastSeenMessagesUpdate{
+             offset: 0,
+             acknowledged: 0,
+             checksum: 1
+           }
   end
 end

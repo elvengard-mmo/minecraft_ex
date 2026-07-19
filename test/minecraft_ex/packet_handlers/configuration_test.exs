@@ -118,6 +118,6 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
 
     assert body ==
              <<1::32, 0, 1, 19, "minecraft:overworld", 100, 10, 10, 0, 1, 0, 0, 19,
-               "minecraft:overworld", 0::64, 1, 255, 0, 0, 0, 0, 63, 1, 0>>
+               "minecraft:overworld", 0::64, 1, 255, 0, 0, 0, 0, 63, 1, 1>>
   end
 end

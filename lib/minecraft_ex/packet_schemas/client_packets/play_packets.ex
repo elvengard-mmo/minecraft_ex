@@ -7,9 +7,27 @@ defmodule MinecraftEx.Client.PlayPackets do
 
   import MinecraftEx, only: [has_state: 2]
 
-  alias MinecraftEx.Types.ChatSession
+  alias MinecraftEx.Types.{
+    Boolean,
+    ChatSession,
+    LastSeenMessagesUpdate,
+    Long,
+    MCString,
+    MessageSignature
+  }
 
   ## Play packets
+
+  # 0x09 Chat Message - state=play
+  @deserializable true
+  defpacket 0x09 when has_state(socket, :play), as: ChatMessage do
+    field :message, MCString
+    field :timestamp, Long
+    field :salt, Long
+    field :has_signature, Boolean
+    field :signature, MessageSignature, if: packet.has_signature
+    field :last_seen_messages, LastSeenMessagesUpdate
+  end
 
   # 0x0A Chat Session Update - state=play
   @deserializable true

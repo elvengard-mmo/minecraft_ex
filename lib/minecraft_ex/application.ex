@@ -6,12 +6,13 @@ defmodule MinecraftEx.Application do
   use Application
 
   alias MinecraftEx.{Crypto, Protocol}
+  alias MinecraftEx.Mojang.ServicesKeySet
 
   ## Application behaviour
 
   @impl true
   def start(_type, _args) do
-    children = [MinecraftEx.Endpoint]
+    children = [ServicesKeySet, MinecraftEx.Endpoint]
 
     # Setup protocol-wide state
     _ = Crypto.setup!()
