@@ -5,7 +5,7 @@ defmodule MinecraftEx.Application do
 
   use Application
 
-  alias MinecraftEx.Crypto
+  alias MinecraftEx.{Crypto, Protocol}
 
   ## Application behaviour
 
@@ -13,8 +13,9 @@ defmodule MinecraftEx.Application do
   def start(_type, _args) do
     children = [MinecraftEx.Endpoint]
 
-    # Setup RSA keys
+    # Setup protocol-wide state
     _ = Crypto.setup!()
+    :ok = Protocol.setup!()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options

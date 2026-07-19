@@ -7,7 +7,7 @@ defmodule MinecraftEx.Server.ConfigurationPackets do
 
   ## Configuration packets
 
-  # 0x02 Configuration
+  # 0x03 Finish Configuration
   @serializable true
-  defpacket 0x02, as: FinishConfiguration
+  defpacket 0x03, as: FinishConfiguration
 end

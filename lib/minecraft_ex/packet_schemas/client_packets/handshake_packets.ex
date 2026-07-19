@@ -23,7 +23,7 @@ defmodule MinecraftEx.Client.HandshakePackets do
     field :protocol_version, VarInt
     field :server_address, MCString
     field :server_port, Short, sign: :unsigned
-    field :next_state, Enum, from: VarInt, values: [status: 1, login: 2]
+    field :intent, Enum, from: VarInt, values: [status: 1, login: 2, transfer: 3]
   end
 
   # 0x00 Status Request - state=status

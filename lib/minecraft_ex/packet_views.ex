@@ -6,6 +6,7 @@ defmodule MinecraftEx.PacketViews do
   use ElvenGard.Network.View
 
   alias MinecraftEx.Crypto
+  alias MinecraftEx.Protocol
   alias MinecraftEx.Server.HandshakePackets.{PongResponse, StatusResponse}
 
   alias MinecraftEx.Server.LoginPackets.{
@@ -38,7 +39,8 @@ defmodule MinecraftEx.PacketViews do
       # Not required - default to ""
       server_id: "",
       public_key: Crypto.get_public_der(),
-      verify_token: token
+      verify_token: token,
+      should_authenticate: true
     }
   end
 
@@ -47,8 +49,8 @@ defmodule MinecraftEx.PacketViews do
     %LoginSuccess{
       uuid: uuid,
       username: username,
-      # FIXME: ????
-      properties: []
+      properties: [],
+      session_id: Protocol.server_session_id()
     }
   end
 

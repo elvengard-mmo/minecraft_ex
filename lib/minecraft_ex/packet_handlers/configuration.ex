@@ -10,17 +10,26 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   alias ElvenGard.Network.Socket
 
   alias MinecraftEx.Client.ConfigurationPackets.{
+    AcknowledgeFinishConfiguration,
     ClientInformation,
-    FinishConfiguration,
     PluginMessage
   }
 
   alias MinecraftEx.PacketViews
+  alias MinecraftEx.Types.MCString
 
   ## Public API
 
-  def handle_packet(%PluginMessage{channel: {"minecraft", "brand"}, data: "vanilla"}, socket) do
-    {:cont, socket}
+  def handle_packet(%PluginMessage{channel: {"minecraft", "brand"}} = packet, socket) do
+    %PluginMessage{data: data} = packet
+    {client_brand, <<>>} = MCString.decode(data)
+
+    case client_brand do
+      "vanilla" -> :ok
+      brand -> Logger.warning("Non-vanilla client brand: #{inspect(brand)}")
+    end
+
+    {:cont, assign(socket, client_brand: client_brand)}
   end
 
   def handle_packet(%ClientInformation{} = info, socket) do
@@ -28,7 +37,7 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
     {:cont, socket}
   end
 
-  def handle_packet(%FinishConfiguration{}, socket) do
+  def handle_packet(%AcknowledgeFinishConfiguration{}, socket) do
     info = %{entity_id: 123}
     render = PacketViews.render(:play_login, info)
     :ok = Socket.send(socket, render)

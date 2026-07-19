@@ -6,6 +6,7 @@ defmodule MinecraftEx.Server.LoginPackets do
   use ElvenGard.Network.PacketSerializer
 
   alias MinecraftEx.Types.{
+    Boolean,
     ByteArray,
     MCString,
     PropertyArray,
@@ -20,6 +21,7 @@ defmodule MinecraftEx.Server.LoginPackets do
     field :server_id, MCString, default: ""
     field :public_key, ByteArray, prefix: true
     field :verify_token, ByteArray, prefix: true
+    field :should_authenticate, Boolean
   end
 
   @serializable true
@@ -27,6 +29,7 @@ defmodule MinecraftEx.Server.LoginPackets do
     field :uuid, UUID
     field :username, MCString
     field :properties, PropertyArray
+    field :session_id, UUID
   end
 
   @serializable true

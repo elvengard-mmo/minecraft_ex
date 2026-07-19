@@ -27,3 +27,5 @@ elvengard_network-*.tar
 
 # Data files
 /data/
+
+/log/

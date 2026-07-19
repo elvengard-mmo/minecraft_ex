@@ -30,16 +30,17 @@ defmodule MinecraftEx.Client.ConfigurationPackets do
     field :main_hand, Enum, from: VarInt, values: [left: 0, right: 1]
     field :text_filtering, Boolean
     field :server_listings, Boolean
+    field :particle_status, Enum, from: VarInt, values: [all: 0, decreased: 1, minimal: 2]
   end
 
-  # 0x01 Plugin Message - state=configuration
+  # 0x02 Plugin Message - state=configuration
   @deserializable true
-  defpacket 0x01 when has_state(socket, :configuration), as: PluginMessage do
+  defpacket 0x02 when has_state(socket, :configuration), as: PluginMessage do
     field :channel, Identifier
-    field :data, ByteArray, prefix: true, as: :binary
+    field :data, ByteArray, prefix: false, as: :binary
   end
 
-  # 0x02 Finish Configuration - state=configuration
+  # 0x03 Acknowledge Finish Configuration - state=configuration
   @deserializable true
-  defpacket 0x02 when has_state(socket, :configuration), as: FinishConfiguration
+  defpacket 0x03 when has_state(socket, :configuration), as: AcknowledgeFinishConfiguration
 end

@@ -16,12 +16,19 @@ defmodule MinecraftEx.PacketHandlers.Handshake do
   }
 
   alias MinecraftEx.PacketViews
+  alias MinecraftEx.Protocol
   alias MinecraftEx.Resources
 
   ## Public API
 
   def handle_packet(%Handshake{} = packet, socket) do
-    {:cont, assign(socket, state: packet.next_state)}
+    state =
+      case packet.intent do
+        :status -> :status
+        intent when intent in [:login, :transfer] -> :login
+      end
+
+    {:cont, assign(socket, state: state, intent: packet.intent)}
   end
 
   def handle_packet(%StatusRequest{}, socket) do
@@ -46,8 +53,8 @@ defmodule MinecraftEx.PacketHandlers.Handshake do
   defp status_response() do
     %{
       version: %{
-        name: "1.20.4-ex",
-        protocol: 765
+        name: "#{Protocol.minecraft_version()}-ex",
+        protocol: Protocol.protocol_version()
       },
       players: %{
         max: 100,
@@ -72,8 +79,7 @@ defmodule MinecraftEx.PacketHandlers.Handshake do
         }
       ],
       favicon: Resources.favicon(),
-      enforcesSecureChat: true,
-      previewsChat: true
+      enforcesSecureChat: true
     }
   end
 end
