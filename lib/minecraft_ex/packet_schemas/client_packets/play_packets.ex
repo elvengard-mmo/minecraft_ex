@@ -55,6 +55,12 @@ defmodule MinecraftEx.Client.PlayPackets do
   @deserializable true
   defpacket 0x0D when has_state(socket, :play), as: ClientTickEnd
 
+  # 0x1C Keep Alive - state=play
+  @deserializable true
+  defpacket 0x1C when has_state(socket, :play), as: KeepAlive do
+    field :id, Long
+  end
+
   # 0x1E Move Player Position - state=play
   @deserializable true
   defpacket 0x1E when has_state(socket, :play), as: MovePlayerPosition do

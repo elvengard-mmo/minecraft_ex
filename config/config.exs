@@ -1,7 +1,7 @@
 import Config
 
 config :logger, :console,
-  level: :debug,
+  level: :info,
   format: "$time $metadata[$level] $message\n",
   metadata: [:application, :socket_id],
   colors: [info: :green]

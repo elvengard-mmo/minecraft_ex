@@ -26,6 +26,7 @@ defmodule MinecraftEx.PacketViews do
     ChunkBatchFinished,
     ChunkBatchStart,
     GameEvent,
+    KeepAlive,
     LevelChunkWithLight,
     Login,
     PlayerPosition,
@@ -147,6 +148,11 @@ defmodule MinecraftEx.PacketViews do
   @impl true
   def render(:level_chunks_load_start, _) do
     %GameEvent{event: 13, value: 0.0}
+  end
+
+  @impl true
+  def render(:keep_alive, %{id: id}) do
+    %KeepAlive{id: id}
   end
 
   @impl true

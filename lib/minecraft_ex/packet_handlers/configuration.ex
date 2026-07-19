@@ -86,7 +86,9 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
         pending_teleport_id: Flat.teleport_id(),
         player_position: {spawn_position.x, spawn_position.y, spawn_position.z},
         player_rotation: {spawn_position.yaw, spawn_position.pitch},
-        client_loaded: false
+        client_loaded: false,
+        last_keep_alive_at: System.monotonic_time(:millisecond),
+        pending_keep_alive_id: nil
       )
 
     render = PacketViews.render(:play_login, initial_play_state())

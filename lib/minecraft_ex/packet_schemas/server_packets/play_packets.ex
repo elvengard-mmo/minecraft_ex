@@ -41,6 +41,12 @@ defmodule MinecraftEx.Server.PlayPackets do
     field :value, Float
   end
 
+  # 0x2C Keep Alive
+  @serializable true
+  defpacket 0x2C, as: KeepAlive do
+    field :id, Long
+  end
+
   # 0x2D Level Chunk With Light
   @serializable true
   defpacket 0x2D, as: LevelChunkWithLight do

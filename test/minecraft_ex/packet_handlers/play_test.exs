@@ -2,6 +2,7 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   use ExUnit.Case, async: true
 
   alias ElvenGard.Network.Socket
+  alias MinecraftEx.Endpoint.NetworkCodec
 
   alias MinecraftEx.Client.PlayPackets.{
     AcceptTeleportation,
@@ -9,6 +10,7 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
     ChatSessionUpdate,
     ChunkBatchReceived,
     ClientTickEnd,
+    KeepAlive,
     MovePlayerPosition,
     MovePlayerRotation,
     PlayerAbilities,
@@ -18,9 +20,18 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
 
   alias MinecraftEx.Mojang.ServicesKeySet
   alias MinecraftEx.PacketHandlers.Play
-  alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate, UUID}
+  alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate, UUID, VarInt}
 
   @player_uuid "00010203-0405-0607-0809-0a0b0c0d0e0f"
+
+  ## Test adapter
+
+  defmodule Adapter do
+    def send(test_process, data) do
+      Kernel.send(test_process, {:sent, IO.iodata_to_binary(data)})
+      :ok
+    end
+  end
 
   ## Tests
 
@@ -54,9 +65,43 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   end
 
   test "accepts Client Tick End without changing the socket" do
-    socket = %Socket{assigns: %{state: :play}}
+    socket = %Socket{
+      assigns: %{
+        state: :play,
+        last_keep_alive_at: System.monotonic_time(:millisecond),
+        pending_keep_alive_id: nil
+      }
+    }
 
     assert {:cont, ^socket} = Play.handle_packet(%ClientTickEnd{}, socket)
+  end
+
+  test "sends a Keep Alive after 15 seconds and accepts the matching response" do
+    socket = %Socket{
+      adapter: Adapter,
+      adapter_state: self(),
+      encoder: NetworkCodec,
+      assigns: %{
+        state: :play,
+        enc_key: nil,
+        last_keep_alive_at: System.monotonic_time(:millisecond) - 15_000,
+        pending_keep_alive_id: nil
+      }
+    }
+
+    assert {:cont, waiting_socket} = Play.handle_packet(%ClientTickEnd{}, socket)
+    keep_alive_id = waiting_socket.assigns.pending_keep_alive_id
+    assert is_integer(keep_alive_id)
+
+    assert_receive {:sent, encoded}
+    {_packet_length, packet} = VarInt.decode(encoded)
+    assert {0x2C, <<^keep_alive_id::signed-64>>} = VarInt.decode(packet)
+
+    assert {:cont, responded_socket} =
+             Play.handle_packet(%KeepAlive{id: keep_alive_id}, waiting_socket)
+
+    assert responded_socket.assigns.pending_keep_alive_id == nil
+    assert responded_socket.assigns.latency_ms >= 0
   end
 
   test "accepts the expected initial teleportation and chunk batch" do

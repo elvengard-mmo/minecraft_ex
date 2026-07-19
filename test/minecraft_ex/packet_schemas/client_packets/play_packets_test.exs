@@ -16,6 +16,9 @@ defmodule MinecraftEx.Client.PlayPacketsTest do
     chunk_batch_received = PlayPackets.deserialize(0x0B, <<2.5::float-32>>, socket)
     assert chunk_batch_received.desired_chunks_per_tick == 2.5
 
+    keep_alive = PlayPackets.deserialize(0x1C, <<123::signed-64>>, socket)
+    assert keep_alive.id == 123
+
     player_abilities = PlayPackets.deserialize(0x28, <<0x02>>, socket)
     assert player_abilities.flags == 0x02
 

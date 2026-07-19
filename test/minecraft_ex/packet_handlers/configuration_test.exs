@@ -111,6 +111,8 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
     assert new_socket.assigns.state == :play
     assert new_socket.assigns.pending_teleport_id == 1
     assert new_socket.assigns.player_position == {0.5, 64.0, 0.5}
+    assert new_socket.assigns.pending_keep_alive_id == nil
+    assert is_integer(new_socket.assigns.last_keep_alive_at)
 
     assert_receive {:sent, encoded_login}
     {_packet_length, packet} = VarInt.decode(encoded_login)

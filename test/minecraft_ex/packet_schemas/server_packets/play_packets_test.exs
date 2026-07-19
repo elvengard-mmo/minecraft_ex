@@ -7,6 +7,7 @@ defmodule MinecraftEx.Server.PlayPacketsTest do
     ChunkBatchFinished,
     ChunkBatchStart,
     GameEvent,
+    KeepAlive,
     LevelChunkWithLight,
     Login,
     PlayerPosition,
@@ -115,5 +116,10 @@ defmodule MinecraftEx.Server.PlayPacketsTest do
 
     assert IO.iodata_to_binary(encoded) ==
              <<0::signed-32, 0::signed-32, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+  end
+
+  test "serializes Keep Alive with its 26.2 packet id and fixed long" do
+    assert {0x2C, [<<123::signed-64>>]} =
+             KeepAlive.serialize(%KeepAlive{id: 123}, %Socket{})
   end
 end
