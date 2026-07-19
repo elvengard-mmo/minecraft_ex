@@ -3,6 +3,7 @@ defmodule MinecraftEx.Client.ConfigurationPacketsTest do
 
   alias ElvenGard.Network.Socket
   alias MinecraftEx.Client.ConfigurationPackets
+  alias MinecraftEx.Types.KnownPack
 
   ## Tests
 
@@ -33,5 +34,24 @@ defmodule MinecraftEx.Client.ConfigurationPacketsTest do
 
     assert packet.__struct__ ==
              MinecraftEx.Client.ConfigurationPackets.AcknowledgeFinishConfiguration
+  end
+
+  test "decodes Known Packs on its 26.2 packet id" do
+    data = <<1, 9, "minecraft", 4, "core", 4, "26.2">>
+    socket = %Socket{assigns: %{state: :configuration}}
+
+    packet = ConfigurationPackets.deserialize(0x07, data, socket)
+
+    assert packet.known_packs == [
+             %KnownPack{namespace: "minecraft", id: "core", version: "26.2"}
+           ]
+  end
+
+  test "decodes an empty Known Packs response" do
+    socket = %Socket{assigns: %{state: :configuration}}
+
+    packet = ConfigurationPackets.deserialize(0x07, <<0>>, socket)
+
+    assert packet.known_packs == []
   end
 end

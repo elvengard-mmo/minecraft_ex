@@ -57,7 +57,11 @@ defmodule MinecraftEx.PacketHandlers.Login do
   end
 
   def handle_packet(%LoginAcknowledged{}, socket) do
-    {:cont, assign(socket, state: :configuration)}
+    new_socket = assign(socket, state: :configuration)
+    render = PacketViews.render(:known_packs, %{})
+    :ok = Socket.send(new_socket, render)
+
+    {:cont, new_socket}
   end
 
   def handle_packet(packet, socket) do

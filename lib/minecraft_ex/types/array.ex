@@ -26,12 +26,18 @@ defmodule MinecraftEx.Types.Array do
 
     {size, rest} = VarInt.decode(data)
 
-    0..(size - 1)
-    |> Enum.reduce({[], rest}, fn _, {acc, bin} ->
-      {value, rest} = type.decode(bin, type_opts)
-      {[value | acc], rest}
-    end)
-    |> then(fn {acc, rest} -> {Enum.reverse(acc), rest} end)
+    case size do
+      0 ->
+        {[], rest}
+
+      size ->
+        1..size
+        |> Enum.reduce({[], rest}, fn _, {acc, bin} ->
+          {value, rest} = type.decode(bin, type_opts)
+          {[value | acc], rest}
+        end)
+        |> then(fn {acc, rest} -> {Enum.reverse(acc), rest} end)
+    end
   end
 
   @impl true

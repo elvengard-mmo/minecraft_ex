@@ -15,9 +15,10 @@ defmodule MinecraftEx.PacketViews do
     SetCompression
   }
 
-  alias MinecraftEx.Server.ConfigurationPackets.FinishConfiguration
+  alias MinecraftEx.Server.ConfigurationPackets.{FinishConfiguration, KnownPacks}
 
   alias MinecraftEx.Server.PlayPackets.{Login}
+  alias MinecraftEx.Types.KnownPack
 
   ## Handshake views
 
@@ -64,6 +65,19 @@ defmodule MinecraftEx.PacketViews do
   @impl true
   def render(:finish_configuration, _) do
     %FinishConfiguration{}
+  end
+
+  @impl true
+  def render(:known_packs, _) do
+    %KnownPacks{
+      known_packs: [
+        %KnownPack{
+          namespace: "minecraft",
+          id: "core",
+          version: Protocol.minecraft_version()
+        }
+      ]
+    }
   end
 
   ## Play views

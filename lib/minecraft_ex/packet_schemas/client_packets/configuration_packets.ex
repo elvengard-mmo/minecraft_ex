@@ -10,11 +10,13 @@ defmodule MinecraftEx.Client.ConfigurationPackets do
   require MinecraftEx.Enums, as: Enums
 
   alias MinecraftEx.Types.{
+    Array,
     Boolean,
     Byte,
     ByteArray,
     Enum,
     Identifier,
+    KnownPack,
     MCString,
     VarInt
   }
@@ -56,4 +58,10 @@ defmodule MinecraftEx.Client.ConfigurationPackets do
   # 0x03 Acknowledge Finish Configuration - state=configuration
   @deserializable true
   defpacket 0x03 when has_state(socket, :configuration), as: AcknowledgeFinishConfiguration
+
+  # 0x07 Known Packs - state=configuration
+  @deserializable true
+  defpacket 0x07 when has_state(socket, :configuration), as: KnownPacks do
+    field :known_packs, Array, type: KnownPack
+  end
 end

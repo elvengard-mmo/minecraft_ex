@@ -3,6 +3,7 @@ defmodule MinecraftEx.PacketViewsTest do
 
   alias MinecraftEx.PacketViews
   alias MinecraftEx.Protocol
+  alias MinecraftEx.Types.KnownPack
 
   ## Tests
 
@@ -20,5 +21,13 @@ defmodule MinecraftEx.PacketViewsTest do
       })
 
     assert Map.fetch!(packet, :session_id) == Protocol.server_session_id()
+  end
+
+  test "advertises the confirmed 26.2 core pack" do
+    packet = PacketViews.render(:known_packs, %{})
+
+    assert packet.known_packs == [
+             %KnownPack{namespace: "minecraft", id: "core", version: "26.2"}
+           ]
   end
 end

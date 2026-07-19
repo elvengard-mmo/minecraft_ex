@@ -12,6 +12,7 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   alias MinecraftEx.Client.ConfigurationPackets.{
     AcknowledgeFinishConfiguration,
     ClientInformation,
+    KnownPacks,
     PluginMessage
   }
 
@@ -35,6 +36,11 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   def handle_packet(%ClientInformation{} = info, socket) do
     Logger.info("Got info: #{inspect(info)}")
     {:cont, socket}
+  end
+
+  def handle_packet(%KnownPacks{} = packet, socket) do
+    %KnownPacks{known_packs: known_packs} = packet
+    {:cont, assign(socket, known_packs: known_packs)}
   end
 
   def handle_packet(%AcknowledgeFinishConfiguration{}, socket) do
