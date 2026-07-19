@@ -22,7 +22,19 @@ defmodule MinecraftEx.PacketViews do
     UpdateTags
   }
 
-  alias MinecraftEx.Server.PlayPackets.{Login}
+  alias MinecraftEx.Server.PlayPackets.{
+    ChunkBatchFinished,
+    ChunkBatchStart,
+    GameEvent,
+    LevelChunkWithLight,
+    Login,
+    PlayerPosition,
+    SetChunkCacheCenter,
+    SetChunkCacheRadius,
+    SetSimulationDistance,
+    SetDefaultSpawnPosition
+  }
+
   alias MinecraftEx.Types.{KnownPack, RegistryEntry, RegistryTag, RegistryTags}
 
   ## Handshake views
@@ -120,5 +132,50 @@ defmodule MinecraftEx.PacketViews do
   @impl true
   def render(:play_login, %{} = info) do
     struct!(Login, info)
+  end
+
+  @impl true
+  def render(:player_position, %{} = position) do
+    struct!(PlayerPosition, position)
+  end
+
+  @impl true
+  def render(:default_spawn_position, %{} = spawn) do
+    struct!(SetDefaultSpawnPosition, spawn)
+  end
+
+  @impl true
+  def render(:level_chunks_load_start, _) do
+    %GameEvent{event: 13, value: 0.0}
+  end
+
+  @impl true
+  def render(:set_chunk_cache_center, %{x: x, z: z}) do
+    %SetChunkCacheCenter{x: x, z: z}
+  end
+
+  @impl true
+  def render(:set_chunk_cache_radius, %{radius: radius}) do
+    %SetChunkCacheRadius{radius: radius}
+  end
+
+  @impl true
+  def render(:set_simulation_distance, %{distance: distance}) do
+    %SetSimulationDistance{distance: distance}
+  end
+
+  @impl true
+  def render(:chunk_batch_start, _) do
+    %ChunkBatchStart{}
+  end
+
+  @impl true
+  def render(:level_chunk_with_light, %{} = chunk) do
+    struct!(LevelChunkWithLight, chunk)
+  end
+
+  @impl true
+  def render(:chunk_batch_finished, %{batch_size: batch_size}) do
+    %ChunkBatchFinished{batch_size: batch_size}
   end
 end

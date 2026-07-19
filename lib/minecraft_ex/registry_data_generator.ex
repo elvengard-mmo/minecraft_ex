@@ -6,11 +6,13 @@ defmodule MinecraftEx.RegistryDataGenerator do
   @version_manifest_url "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
   @type registry :: %{String.t() => String.t() | [String.t()]}
+  @type block_states :: %{String.t() => non_neg_integer()}
   @type registry_tag :: %{String.t() => String.t() | [non_neg_integer()]}
   @type registry_tags :: %{String.t() => String.t() | [registry_tag()]}
 
   @type manifest :: %{
-          String.t() => String.t() | pos_integer() | [registry()] | [registry_tags()]
+          String.t() =>
+            String.t() | pos_integer() | block_states() | [registry()] | [registry_tags()]
         }
 
   ## Public API
@@ -43,7 +45,10 @@ defmodule MinecraftEx.RegistryDataGenerator do
         raise("Requested Minecraft #{minecraft_version}, but the JAR reports #{detected_version}")
       end
 
-      manifest = build_manifest(minecraft_version, protocol_version, registries, tags)
+      block_states = default_block_states!(generated_path)
+
+      manifest =
+        build_manifest(minecraft_version, protocol_version, registries, tags, block_states)
 
       write_manifest!(manifest, output_path, Keyword.get(opts, :check, false))
       manifest
@@ -52,11 +57,18 @@ defmodule MinecraftEx.RegistryDataGenerator do
     end
   end
 
-  @spec build_manifest(String.t(), pos_integer(), [registry()], [registry_tags()]) :: manifest()
-  def build_manifest(minecraft_version, protocol_version, registries, tags) do
+  @spec build_manifest(
+          String.t(),
+          pos_integer(),
+          [registry()],
+          [registry_tags()],
+          block_states()
+        ) :: manifest()
+  def build_manifest(minecraft_version, protocol_version, registries, tags, block_states) do
     %{
       "minecraft_version" => minecraft_version,
       "protocol_version" => protocol_version,
+      "block_states" => block_states,
       "registries" => registries,
       "tags" => tags
     }
@@ -67,9 +79,17 @@ defmodule MinecraftEx.RegistryDataGenerator do
     %{
       "minecraft_version" => minecraft_version,
       "protocol_version" => protocol_version,
+      "block_states" => block_states,
       "registries" => registries,
       "tags" => tags
     } = manifest
+
+    block_state_rows =
+      block_states
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {block_id, state_id} ->
+        ["    ", JSON.encode!(block_id), ":", Integer.to_string(state_id)]
+      end)
 
     registry_rows =
       Enum.map(registries, fn registry ->
@@ -105,6 +125,9 @@ defmodule MinecraftEx.RegistryDataGenerator do
       "  \"protocol_version\": ",
       Integer.to_string(protocol_version),
       ",\n",
+      "  \"block_states\": {\n",
+      Enum.intersperse(block_state_rows, ",\n"),
+      "\n  },\n",
       "  \"registries\": [\n",
       Enum.intersperse(registry_rows, ",\n"),
       "\n  ],\n",
@@ -116,6 +139,22 @@ defmodule MinecraftEx.RegistryDataGenerator do
   end
 
   ## Private functions
+
+  defp default_block_states!(generated_path) do
+    generated_path
+    |> Path.join("reports/blocks.json")
+    |> File.read!()
+    |> JSON.decode!()
+    |> Map.new(fn {block_id, block} ->
+      %{"states" => states} = block
+
+      %{"id" => state_id} =
+        Enum.find(states, &Map.get(&1, "default", false)) ||
+          raise("Block #{block_id} has no default state")
+
+      {block_id, state_id}
+    end)
+  end
 
   defp version_metadata!(minecraft_version, minecraft_path, cache_path) do
     local_path =

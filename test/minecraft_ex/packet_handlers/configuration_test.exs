@@ -109,6 +109,8 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
              Configuration.handle_packet(%AcknowledgeFinishConfiguration{}, socket)
 
     assert new_socket.assigns.state == :play
+    assert new_socket.assigns.pending_teleport_id == 1
+    assert new_socket.assigns.player_position == {0.5, 64.0, 0.5}
 
     assert_receive {:sent, encoded_login}
     {_packet_length, packet} = VarInt.decode(encoded_login)
@@ -118,6 +120,30 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
 
     assert body ==
              <<1::32, 0, 1, 19, "minecraft:overworld", 100, 10, 10, 0, 1, 0, 0, 19,
-               "minecraft:overworld", 0::64, 1, 255, 0, 0, 0, 0, 63, 1, 1>>
+               "minecraft:overworld", 0::64, 1, 255, 0, 1, 0, 0, 63, 1, 1>>
+
+    expected_packet_ids = [0x48, 0x61, 0x26, 0x5E, 0x5F, 0x6F, 0x0C]
+
+    Enum.each(expected_packet_ids, fn expected_packet_id ->
+      assert_receive {:sent, encoded}
+      {_packet_length, packet} = VarInt.decode(encoded)
+      {packet_id, _body} = VarInt.decode(packet)
+      assert packet_id == expected_packet_id
+    end)
+
+    chunk_positions =
+      for _index <- 1..441, into: MapSet.new() do
+        assert_receive {:sent, encoded}
+        {_packet_length, packet} = VarInt.decode(encoded)
+        {0x2D, <<x::signed-32, z::signed-32, _chunk_data::binary>>} = VarInt.decode(packet)
+        {x, z}
+      end
+
+    assert chunk_positions == MapSet.new(for(x <- -10..10, z <- -10..10, do: {x, z}))
+
+    assert_receive {:sent, encoded_batch_finished}
+    {_packet_length, packet} = VarInt.decode(encoded_batch_finished)
+    {0x0B, body} = VarInt.decode(packet)
+    assert {441, <<>>} = VarInt.decode(body)
   end
 end

@@ -49,5 +49,10 @@ defmodule MinecraftEx.Types.Short do
 
   @impl true
   @spec encode(t(), keyword) :: bitstring
-  def encode(_data, _opts), do: raise("unimplemented for now")
+  def encode(data, opts) when is_integer(data) do
+    case Keyword.get(opts, :sign, :unsigned) do
+      :unsigned -> <<data::unsigned-16>>
+      :signed -> <<data::signed-16>>
+    end
+  end
 end

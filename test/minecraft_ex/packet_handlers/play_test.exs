@@ -2,7 +2,20 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   use ExUnit.Case, async: true
 
   alias ElvenGard.Network.Socket
-  alias MinecraftEx.Client.PlayPackets.{ChatMessage, ChatSessionUpdate, ClientTickEnd}
+
+  alias MinecraftEx.Client.PlayPackets.{
+    AcceptTeleportation,
+    ChatMessage,
+    ChatSessionUpdate,
+    ChunkBatchReceived,
+    ClientTickEnd,
+    MovePlayerPosition,
+    MovePlayerRotation,
+    PlayerAbilities,
+    PlayerInput,
+    PlayerLoaded
+  }
+
   alias MinecraftEx.Mojang.ServicesKeySet
   alias MinecraftEx.PacketHandlers.Play
   alias MinecraftEx.Types.{ChatSession, LastSeenMessagesUpdate, UUID}
@@ -44,6 +57,70 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
     socket = %Socket{assigns: %{state: :play}}
 
     assert {:cont, ^socket} = Play.handle_packet(%ClientTickEnd{}, socket)
+  end
+
+  test "accepts the expected initial teleportation and chunk batch" do
+    socket = %Socket{
+      assigns: %{
+        state: :play,
+        pending_teleport_id: 1,
+        player_position: {0.5, 64.0, 0.5}
+      }
+    }
+
+    assert {:cont, teleported_socket} =
+             Play.handle_packet(%AcceptTeleportation{teleport_id: 1}, socket)
+
+    assert teleported_socket.assigns.pending_teleport_id == nil
+
+    assert {:cont, batched_socket} =
+             Play.handle_packet(
+               %ChunkBatchReceived{desired_chunks_per_tick: 2.5},
+               teleported_socket
+             )
+
+    assert batched_socket.assigns.desired_chunks_per_tick == 2.5
+  end
+
+  test "records player movement and the loaded acknowledgement" do
+    socket = %Socket{
+      assigns: %{
+        state: :play,
+        username: "Player",
+        player_position: {0.5, 64.0, 0.5},
+        player_rotation: {0.0, 0.0}
+      }
+    }
+
+    assert {:cont, moved_socket} =
+             Play.handle_packet(
+               %MovePlayerPosition{x: 1.5, y: 65.0, z: 2.5, flags: 1},
+               socket
+             )
+
+    assert moved_socket.assigns.player_position == {1.5, 65.0, 2.5}
+    assert moved_socket.assigns.movement_flags == 1
+
+    assert {:cont, rotated_socket} =
+             Play.handle_packet(
+               %MovePlayerRotation{yaw: 90.0, pitch: 10.0, flags: 0},
+               moved_socket
+             )
+
+    assert rotated_socket.assigns.player_rotation == {90.0, 10.0}
+
+    assert {:cont, flying_socket} =
+             Play.handle_packet(%PlayerAbilities{flags: 0x02}, rotated_socket)
+
+    assert flying_socket.assigns.player_flying
+
+    assert {:cont, input_socket} =
+             Play.handle_packet(%PlayerInput{flags: 0x10}, flying_socket)
+
+    assert input_socket.assigns.player_input_flags == 0x10
+
+    assert {:cont, loaded_socket} = Play.handle_packet(%PlayerLoaded{}, input_socket)
+    assert loaded_socket.assigns.client_loaded
   end
 
   test "accepts a valid signed chat message and advances its chain" do

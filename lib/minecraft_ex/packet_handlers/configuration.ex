@@ -20,6 +20,10 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   alias MinecraftEx.Protocol
   alias MinecraftEx.Resources
   alias MinecraftEx.Types.{KnownPack, MCString}
+  alias MinecraftEx.World.Flat
+
+  @view_distance 10
+  @simulation_distance 10
 
   ## Public API
 
@@ -74,10 +78,23 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   end
 
   def handle_packet(%AcknowledgeFinishConfiguration{}, socket) do
-    render = PacketViews.render(:play_login, initial_play_state())
-    :ok = Socket.send(socket, render)
+    spawn_position = Flat.spawn_position()
 
-    {:cont, assign(socket, state: :play)}
+    new_socket =
+      assign(socket,
+        state: :play,
+        pending_teleport_id: Flat.teleport_id(),
+        player_position: {spawn_position.x, spawn_position.y, spawn_position.z},
+        player_rotation: {spawn_position.yaw, spawn_position.pitch},
+        client_loaded: false
+      )
+
+    render = PacketViews.render(:play_login, initial_play_state())
+    :ok = Socket.send(new_socket, render)
+
+    send_initial_world(new_socket, spawn_position)
+
+    {:cont, new_socket}
   end
 
   ## Private functions
@@ -88,8 +105,8 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
       is_hardcore: false,
       dimensions: [{"minecraft", "overworld"}],
       max_players: 100,
-      view_distance: 10,
-      simulation_distance: 10,
+      view_distance: @view_distance,
+      simulation_distance: @simulation_distance,
       reduced_debug_info: false,
       enable_respawn_screen: true,
       limited_crafting: false,
@@ -99,7 +116,7 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
       game_mode: :creative,
       previous_game_mode: :undefined,
       is_debug: false,
-      is_flat: false,
+      is_flat: true,
       has_death_location: false,
       death_dimension_name: nil,
       death_location: nil,
@@ -108,5 +125,41 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
       online_mode: true,
       enforces_secure_chat: true
     }
+  end
+
+  defp send_initial_world(socket, spawn_position) do
+    player_position =
+      spawn_position
+      |> Map.put(:teleport_id, Flat.teleport_id())
+      |> Map.put(:relative_flags, 0)
+
+    {chunk_x, chunk_z} = Flat.spawn_chunk_position()
+
+    initial_packets = [
+      PacketViews.render(:player_position, player_position),
+      PacketViews.render(:default_spawn_position, %{
+        dimension: {"minecraft", "overworld"},
+        position: Flat.spawn_block_position(),
+        yaw: spawn_position.yaw,
+        pitch: spawn_position.pitch
+      }),
+      PacketViews.render(:level_chunks_load_start, %{}),
+      PacketViews.render(:set_chunk_cache_center, %{x: chunk_x, z: chunk_z}),
+      PacketViews.render(:set_chunk_cache_radius, %{radius: @view_distance}),
+      PacketViews.render(:set_simulation_distance, %{distance: @simulation_distance}),
+      PacketViews.render(:chunk_batch_start, %{})
+    ]
+
+    Enum.each(initial_packets, fn packet -> :ok = Socket.send(socket, packet) end)
+
+    chunks = Flat.chunks_around_spawn(@view_distance)
+
+    Enum.each(chunks, fn chunk ->
+      packet = PacketViews.render(:level_chunk_with_light, chunk)
+      :ok = Socket.send(socket, packet)
+    end)
+
+    batch_finished = PacketViews.render(:chunk_batch_finished, %{batch_size: length(chunks)})
+    :ok = Socket.send(socket, batch_finished)
   end
 end

@@ -1,0 +1,22 @@
+defmodule MinecraftEx.Types.Float do
+  @moduledoc """
+  IEEE 754 binary32 floating-point number.
+  """
+
+  use ElvenGard.Network.Type
+
+  @type t :: float()
+
+  ## Behaviour implementations
+
+  @impl true
+  @spec decode(bitstring(), Keyword.t()) :: {t(), bitstring()}
+  def decode(data, _opts) when is_binary(data) do
+    <<value::float-32, rest::bitstring>> = data
+    {value, rest}
+  end
+
+  @impl true
+  @spec encode(t(), Keyword.t()) :: bitstring()
+  def encode(data, _opts) when is_float(data), do: <<data::float-32>>
+end

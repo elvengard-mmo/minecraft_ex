@@ -9,8 +9,20 @@ defmodule MinecraftEx.MinecraftData do
 
   @minecraft_version Map.fetch!(@data, "minecraft_version")
   @protocol_version Map.fetch!(@data, "protocol_version")
+  @block_states Map.fetch!(@data, "block_states")
   @registry_data Map.fetch!(@data, "registries")
   @tag_data Map.fetch!(@data, "tags")
+
+  @registry_entry_ids Map.new(@registry_data, fn registry ->
+                        %{"registry_id" => registry_id, "entries" => entries} = registry
+
+                        entry_ids =
+                          entries
+                          |> Enum.with_index()
+                          |> Map.new()
+
+                        {registry_id, entry_ids}
+                      end)
 
   @type registry :: %{
           registry_id: String.t(),
@@ -34,6 +46,16 @@ defmodule MinecraftEx.MinecraftData do
 
   @spec protocol_version() :: pos_integer()
   def protocol_version(), do: @protocol_version
+
+  @spec block_state_id!(String.t()) :: non_neg_integer()
+  def block_state_id!(block_id), do: Map.fetch!(@block_states, block_id)
+
+  @spec registry_entry_id!(String.t(), String.t()) :: non_neg_integer()
+  def registry_entry_id!(registry_id, entry_id) do
+    @registry_entry_ids
+    |> Map.fetch!(registry_id)
+    |> Map.fetch!(entry_id)
+  end
 
   @spec registries() :: [registry()]
   def registries() do

@@ -7,6 +7,53 @@ defmodule MinecraftEx.Client.PlayPacketsTest do
 
   ## Tests
 
+  test "decodes the initial play acknowledgements on their 26.2 packet ids" do
+    socket = %Socket{assigns: %{state: :play}}
+
+    accept_teleportation = PlayPackets.deserialize(0x00, <<1>>, socket)
+    assert accept_teleportation.teleport_id == 1
+
+    chunk_batch_received = PlayPackets.deserialize(0x0B, <<2.5::float-32>>, socket)
+    assert chunk_batch_received.desired_chunks_per_tick == 2.5
+
+    player_abilities = PlayPackets.deserialize(0x28, <<0x02>>, socket)
+    assert player_abilities.flags == 0x02
+
+    player_input = PlayPackets.deserialize(0x2B, <<0x10>>, socket)
+    assert player_input.flags == 0x10
+
+    player_loaded = PlayPackets.deserialize(0x2C, <<>>, socket)
+    assert player_loaded.__struct__ == MinecraftEx.Client.PlayPackets.PlayerLoaded
+  end
+
+  test "decodes the four movement packet shapes" do
+    socket = %Socket{assigns: %{state: :play}}
+
+    position =
+      PlayPackets.deserialize(
+        0x1E,
+        <<0.5::float-64, 64.0::float-64, 0.5::float-64, 1>>,
+        socket
+      )
+
+    assert %{x: 0.5, y: 64.0, z: 0.5, flags: 1} = position
+
+    position_and_rotation =
+      PlayPackets.deserialize(
+        0x1F,
+        <<0.5::float-64, 64.0::float-64, 0.5::float-64, 90.0::float-32, 10.0::float-32, 0>>,
+        socket
+      )
+
+    assert %{yaw: 90.0, pitch: 10.0, flags: 0} = position_and_rotation
+
+    rotation = PlayPackets.deserialize(0x20, <<45.0::float-32, 5.0::float-32, 0>>, socket)
+    assert %{yaw: 45.0, pitch: 5.0, flags: 0} = rotation
+
+    status = PlayPackets.deserialize(0x21, <<3>>, socket)
+    assert status.flags == 3
+  end
+
   test "decodes Chat Session Update on its 26.2 packet id" do
     data =
       <<0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 123::signed-64, 2, 16, 17, 3, 32,

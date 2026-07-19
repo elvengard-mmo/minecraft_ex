@@ -3,10 +3,11 @@ defmodule Mix.Tasks.Minecraft.RegistryData.Generate do
 
   alias MinecraftEx.RegistryDataGenerator
 
-  @shortdoc "Generates synchronized registry data and tags from an official Minecraft version"
+  @shortdoc "Generates registries, block states, and tags from an official Minecraft version"
 
   @moduledoc """
-  Generates the Minecraft version manifest, synchronized vanilla registries, and network tags.
+  Generates the Minecraft version manifest, synchronized vanilla registries, default block state
+  IDs, and network tags.
 
       mix minecraft.registry_data.generate VERSION
 
@@ -61,11 +62,12 @@ defmodule Mix.Tasks.Minecraft.RegistryData.Generate do
     manifest = RegistryDataGenerator.generate(minecraft_version, generator_opts)
 
     registry_count = manifest |> Map.fetch!("registries") |> length()
+    block_state_count = manifest |> Map.fetch!("block_states") |> map_size()
     registry_tags = Map.fetch!(manifest, "tags")
     tag_count = Enum.sum(Enum.map(registry_tags, &length(&1["tags"])))
 
     Mix.shell().info(
-      "Generated #{registry_count} synchronized registries and " <>
+      "Generated #{registry_count} synchronized registries, #{block_state_count} block states, and " <>
         "#{tag_count} tags across #{length(registry_tags)} registries"
     )
   end

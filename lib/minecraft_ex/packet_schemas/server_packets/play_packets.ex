@@ -11,7 +11,10 @@ defmodule MinecraftEx.Server.PlayPackets do
     Array,
     Boolean,
     Byte,
+    ChunkData,
+    Double,
     Enum,
+    Float,
     Identifier,
     Int,
     Long,
@@ -20,6 +23,31 @@ defmodule MinecraftEx.Server.PlayPackets do
   }
 
   ## Play packets
+
+  # 0x0B Chunk Batch Finished
+  @serializable true
+  defpacket 0x0B, as: ChunkBatchFinished do
+    field :batch_size, VarInt
+  end
+
+  # 0x0C Chunk Batch Start
+  @serializable true
+  defpacket 0x0C, as: ChunkBatchStart
+
+  # 0x26 Game Event
+  @serializable true
+  defpacket 0x26, as: GameEvent do
+    field :event, Byte, sign: :unsigned
+    field :value, Float
+  end
+
+  # 0x2D Level Chunk With Light
+  @serializable true
+  defpacket 0x2D, as: LevelChunkWithLight do
+    field :x, Int
+    field :z, Int
+    field :data, ChunkData
+  end
 
   # 0x31 Login
   @serializable true
@@ -54,5 +82,48 @@ defmodule MinecraftEx.Server.PlayPackets do
     field :sea_level, VarInt
     field :online_mode, Boolean
     field :enforces_secure_chat, Boolean
+  end
+
+  # 0x48 Player Position
+  @serializable true
+  defpacket 0x48, as: PlayerPosition do
+    field :teleport_id, VarInt
+    field :x, Double
+    field :y, Double
+    field :z, Double
+    field :delta_x, Double
+    field :delta_y, Double
+    field :delta_z, Double
+    field :yaw, Float
+    field :pitch, Float
+    field :relative_flags, Int
+  end
+
+  # 0x5E Set Chunk Cache Center
+  @serializable true
+  defpacket 0x5E, as: SetChunkCacheCenter do
+    field :x, VarInt
+    field :z, VarInt
+  end
+
+  # 0x5F Set Chunk Cache Radius
+  @serializable true
+  defpacket 0x5F, as: SetChunkCacheRadius do
+    field :radius, VarInt
+  end
+
+  # 0x61 Set Default Spawn Position
+  @serializable true
+  defpacket 0x61, as: SetDefaultSpawnPosition do
+    field :dimension, Identifier
+    field :position, Position
+    field :yaw, Float
+    field :pitch, Float
+  end
+
+  # 0x6F Set Simulation Distance
+  @serializable true
+  defpacket 0x6F, as: SetSimulationDistance do
+    field :distance, VarInt
   end
 end
