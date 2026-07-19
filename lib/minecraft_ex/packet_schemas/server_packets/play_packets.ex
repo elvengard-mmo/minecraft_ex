@@ -5,6 +5,8 @@ defmodule MinecraftEx.Server.PlayPackets do
 
   use ElvenGard.Network.PacketSerializer
 
+  require MinecraftEx.Enums, as: Enums
+
   alias MinecraftEx.Types.{
     Array,
     Boolean,
@@ -37,11 +39,11 @@ defmodule MinecraftEx.Server.PlayPackets do
 
     field :game_mode, Enum,
       from: {Byte, [sign: :unsigned]},
-      values: [survival: 0, creative: 1, adventure: 2, spectator: 3]
+      enumerators: Enums.game_mode_enumerators()
 
     field :previous_game_mode, Enum,
       from: Byte,
-      values: [undefined: -1, survival: 0, creative: 1, adventure: 2, spectator: 3]
+      enumerators: Enums.previous_game_mode_enumerators()
 
     field :is_debug, Boolean
     field :is_flat, Boolean

@@ -23,7 +23,8 @@ defmodule MinecraftEx.MixProject do
   defp deps do
     [
       {:elvengard_network, github: "elvengard-mmo/elvengard_network"},
-      {:ranch, "~> 2.2"}
+      {:ranch, "~> 2.2"},
+      {:simple_enum, "~> 1.0"}
     ]
   end
 end

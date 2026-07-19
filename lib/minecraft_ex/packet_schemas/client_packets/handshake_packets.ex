@@ -7,6 +7,8 @@ defmodule MinecraftEx.Client.HandshakePackets do
 
   import MinecraftEx, only: [has_state: 2]
 
+  require MinecraftEx.Enums, as: Enums
+
   alias MinecraftEx.Types.{
     Enum,
     Long,
@@ -23,7 +25,10 @@ defmodule MinecraftEx.Client.HandshakePackets do
     field :protocol_version, VarInt
     field :server_address, MCString
     field :server_port, Short, sign: :unsigned
-    field :intent, Enum, from: VarInt, values: [status: 1, login: 2, transfer: 3]
+
+    field :intent, Enum,
+      from: VarInt,
+      enumerators: Enums.handshake_intent_enumerators()
   end
 
   # 0x00 Status Request - state=status

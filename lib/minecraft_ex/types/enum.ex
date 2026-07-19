@@ -11,19 +11,17 @@ defmodule MinecraftEx.Types.Enum do
 
   use ElvenGard.Network.Type
 
-  @type t :: :atom
+  @type t :: atom()
 
-  ## Behaviour impls
+  ## ElvenGard.Network.Type callbacks
 
   @impl true
-  @spec decode(bitstring, keyword) :: {t(), bitstring}
+  @spec decode(bitstring(), Keyword.t()) :: {t(), bitstring()}
   def decode(data, opts) when is_binary(data) do
-    # Enum, from: VarInt, values: [status: 1, login: 2]
-    # Enum, from: {VarInt, [opts]}, values: [status: 1, login: 2]
-    enumerators = Keyword.fetch!(opts, :values)
+    enumerators = Keyword.fetch!(opts, :enumerators)
 
     {value, rest} =
-      case Keyword.get(opts, :from) do
+      case Keyword.fetch!(opts, :from) do
         {from, from_opts} -> from.decode(data, from_opts)
         from -> from.decode(data, [])
       end
@@ -33,14 +31,12 @@ defmodule MinecraftEx.Types.Enum do
   end
 
   @impl true
-  @spec encode(t(), keyword) :: bitstring
+  @spec encode(t(), Keyword.t()) :: bitstring()
   def encode(data, opts) do
-    # Enum, from: VarInt, values: [status: 1, login: 2]
-    # Enum, from: {VarInt, [opts]}, values: [status: 1, login: 2]
-    enumerators = Keyword.fetch!(opts, :values)
+    enumerators = Keyword.fetch!(opts, :enumerators)
     value = Keyword.fetch!(enumerators, data)
 
-    case Keyword.get(opts, :from) do
+    case Keyword.fetch!(opts, :from) do
       {from, from_opts} -> from.encode(value, from_opts)
       from -> from.encode(value, [])
     end

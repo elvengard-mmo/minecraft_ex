@@ -7,6 +7,8 @@ defmodule MinecraftEx.Client.ConfigurationPackets do
 
   import MinecraftEx, only: [has_state: 2]
 
+  require MinecraftEx.Enums, as: Enums
+
   alias MinecraftEx.Types.{
     Boolean,
     Byte,
@@ -24,13 +26,24 @@ defmodule MinecraftEx.Client.ConfigurationPackets do
   defpacket 0x00 when has_state(socket, :configuration), as: ClientInformation do
     field :locale, MCString
     field :view_distance, Byte
-    field :chat_mode, Enum, from: VarInt, values: [enabled: 0, commands_only: 1, hidden: 2]
+
+    field :chat_mode, Enum,
+      from: VarInt,
+      enumerators: Enums.chat_mode_enumerators()
+
     field :chat_colors, Boolean
     field :displayed_skin_parts, Byte, sign: :unsigned
-    field :main_hand, Enum, from: VarInt, values: [left: 0, right: 1]
+
+    field :main_hand, Enum,
+      from: VarInt,
+      enumerators: Enums.main_hand_enumerators()
+
     field :text_filtering, Boolean
     field :server_listings, Boolean
-    field :particle_status, Enum, from: VarInt, values: [all: 0, decreased: 1, minimal: 2]
+
+    field :particle_status, Enum,
+      from: VarInt,
+      enumerators: Enums.particle_status_enumerators()
   end
 
   # 0x02 Plugin Message - state=configuration
