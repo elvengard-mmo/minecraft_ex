@@ -4,9 +4,7 @@ defmodule MinecraftEx.Protocol do
   """
 
   alias ElvenGard.Network.UUID
-
-  @minecraft_version "26.2"
-  @protocol_version 776
+  alias MinecraftEx.MinecraftData
 
   ## Public API
 
@@ -16,10 +14,10 @@ defmodule MinecraftEx.Protocol do
   end
 
   @spec minecraft_version() :: String.t()
-  def minecraft_version(), do: @minecraft_version
+  def minecraft_version(), do: MinecraftData.minecraft_version()
 
   @spec protocol_version() :: pos_integer()
-  def protocol_version(), do: @protocol_version
+  def protocol_version(), do: MinecraftData.protocol_version()
 
   @spec server_session_id() :: String.t()
   def server_session_id(), do: :persistent_term.get(server_session_id_key())

@@ -5,10 +5,11 @@ defmodule MinecraftEx.Server.ConfigurationPacketsTest do
 
   alias MinecraftEx.Server.ConfigurationPackets.{
     FinishConfiguration,
-    KnownPacks
+    KnownPacks,
+    RegistryData
   }
 
-  alias MinecraftEx.Types.KnownPack
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
 
   ## Tests
 
@@ -27,5 +28,17 @@ defmodule MinecraftEx.Server.ConfigurationPacketsTest do
 
     assert IO.iodata_to_binary(encoded) ==
              <<1, 9, "minecraft", 4, "core", 4, "26.2">>
+  end
+
+  test "serializes Registry Data without NBT on its 26.2 packet id" do
+    packet = %RegistryData{
+      registry_id: "dimension_type",
+      entries: [%RegistryEntry{id: "overworld"}]
+    }
+
+    assert {0x07, encoded} = RegistryData.serialize(packet, %Socket{})
+
+    assert IO.iodata_to_binary(encoded) ==
+             <<24, "minecraft:dimension_type", 1, 19, "minecraft:overworld", 0>>
   end
 end

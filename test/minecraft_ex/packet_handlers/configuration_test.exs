@@ -11,7 +11,17 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
   }
 
   alias MinecraftEx.PacketHandlers.Configuration
-  alias MinecraftEx.Types.KnownPack
+  alias MinecraftEx.Endpoint.NetworkCodec
+  alias MinecraftEx.Types.{KnownPack, VarInt}
+
+  ## Test adapter
+
+  defmodule Adapter do
+    def send(test_process, data) do
+      Kernel.send(test_process, {:sent, IO.iodata_to_binary(data)})
+      :ok
+    end
+  end
 
   ## Tests
 
@@ -50,9 +60,29 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
     ]
 
     packet = %KnownPacks{known_packs: known_packs}
-    socket = %Socket{assigns: %{state: :configuration}}
+
+    socket = %Socket{
+      adapter: Adapter,
+      adapter_state: self(),
+      encoder: NetworkCodec,
+      assigns: %{state: :configuration, enc_key: nil}
+    }
 
     assert {:cont, new_socket} = Configuration.handle_packet(packet, socket)
     assert new_socket.assigns.known_packs == known_packs
+
+    encoded_registries =
+      for _ <- 1..29 do
+        assert_receive {:sent, encoded}
+        encoded
+      end
+
+    assert length(encoded_registries) == 29
+
+    assert Enum.all?(encoded_registries, fn encoded ->
+             {_packet_length, packet} = VarInt.decode(encoded)
+             {packet_id, _body} = VarInt.decode(packet)
+             packet_id == 0x07
+           end)
   end
 end

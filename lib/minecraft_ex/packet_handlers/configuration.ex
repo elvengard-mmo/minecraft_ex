@@ -17,7 +17,9 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
   }
 
   alias MinecraftEx.PacketViews
-  alias MinecraftEx.Types.MCString
+  alias MinecraftEx.Protocol
+  alias MinecraftEx.Resources
+  alias MinecraftEx.Types.{KnownPack, MCString}
 
   ## Public API
 
@@ -40,7 +42,24 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
 
   def handle_packet(%KnownPacks{} = packet, socket) do
     %KnownPacks{known_packs: known_packs} = packet
-    {:cont, assign(socket, known_packs: known_packs)}
+
+    core_pack = %KnownPack{
+      namespace: "minecraft",
+      id: "core",
+      version: Protocol.minecraft_version()
+    }
+
+    [^core_pack] = known_packs
+    new_socket = assign(socket, known_packs: known_packs)
+    registries = Resources.vanilla_registries()
+
+    Enum.each(registries, fn registry ->
+      render = PacketViews.render(:registry_data, registry)
+      :ok = Socket.send(new_socket, render)
+    end)
+
+    Logger.info("Sent #{length(registries)} vanilla registries")
+    {:cont, new_socket}
   end
 
   def handle_packet(%AcknowledgeFinishConfiguration{}, socket) do

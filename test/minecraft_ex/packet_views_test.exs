@@ -3,7 +3,7 @@ defmodule MinecraftEx.PacketViewsTest do
 
   alias MinecraftEx.PacketViews
   alias MinecraftEx.Protocol
-  alias MinecraftEx.Types.KnownPack
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
 
   ## Tests
 
@@ -29,5 +29,16 @@ defmodule MinecraftEx.PacketViewsTest do
     assert packet.known_packs == [
              %KnownPack{namespace: "minecraft", id: "core", version: "26.2"}
            ]
+  end
+
+  test "renders Registry Data entries without NBT" do
+    packet =
+      PacketViews.render(:registry_data, %{
+        registry_id: "dimension_type",
+        entries: ["overworld"]
+      })
+
+    assert packet.registry_id == "dimension_type"
+    assert packet.entries == [%RegistryEntry{id: "overworld"}]
   end
 end

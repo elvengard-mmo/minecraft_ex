@@ -15,10 +15,14 @@ defmodule MinecraftEx.PacketViews do
     SetCompression
   }
 
-  alias MinecraftEx.Server.ConfigurationPackets.{FinishConfiguration, KnownPacks}
+  alias MinecraftEx.Server.ConfigurationPackets.{
+    FinishConfiguration,
+    KnownPacks,
+    RegistryData
+  }
 
   alias MinecraftEx.Server.PlayPackets.{Login}
-  alias MinecraftEx.Types.KnownPack
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
 
   ## Handshake views
 
@@ -77,6 +81,16 @@ defmodule MinecraftEx.PacketViews do
           version: Protocol.minecraft_version()
         }
       ]
+    }
+  end
+
+  @impl true
+  def render(:registry_data, %{} = data) do
+    %{registry_id: registry_id, entries: entries} = data
+
+    %RegistryData{
+      registry_id: registry_id,
+      entries: Enum.map(entries, &%RegistryEntry{id: &1})
     }
   end
 
