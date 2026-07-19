@@ -16,4 +16,8 @@ defmodule MinecraftEx.Client.PlayPackets do
   defpacket 0x0A when has_state(socket, :play), as: ChatSessionUpdate do
     field :chat_session, ChatSession
   end
+
+  # 0x0D Client Tick End - state=play
+  @deserializable true
+  defpacket 0x0D when has_state(socket, :play), as: ClientTickEnd
 end

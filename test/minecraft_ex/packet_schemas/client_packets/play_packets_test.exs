@@ -22,4 +22,11 @@ defmodule MinecraftEx.Client.PlayPacketsTest do
              key_signature: <<32, 33, 34>>
            }
   end
+
+  test "decodes Client Tick End on its 26.2 packet id" do
+    socket = %Socket{assigns: %{state: :play}}
+    packet = PlayPackets.deserialize(0x0D, <<>>, socket)
+
+    assert packet.__struct__ == MinecraftEx.Client.PlayPackets.ClientTickEnd
+  end
 end

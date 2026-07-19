@@ -7,7 +7,7 @@ defmodule MinecraftEx.PacketHandlers.Play do
 
   import ElvenGard.Network.Socket, only: [assign: 2]
 
-  alias MinecraftEx.Client.PlayPackets.ChatSessionUpdate
+  alias MinecraftEx.Client.PlayPackets.{ChatSessionUpdate, ClientTickEnd}
   alias MinecraftEx.Types.ChatSession
 
   ## Public API
@@ -19,5 +19,9 @@ defmodule MinecraftEx.PacketHandlers.Play do
     Logger.info("Updated chat session: #{session_id}")
 
     {:cont, assign(socket, chat_session: chat_session)}
+  end
+
+  def handle_packet(%ClientTickEnd{}, socket) do
+    {:cont, socket}
   end
 end

@@ -2,7 +2,7 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
   use ExUnit.Case, async: true
 
   alias ElvenGard.Network.Socket
-  alias MinecraftEx.Client.PlayPackets.ChatSessionUpdate
+  alias MinecraftEx.Client.PlayPackets.{ChatSessionUpdate, ClientTickEnd}
   alias MinecraftEx.PacketHandlers.Play
   alias MinecraftEx.Types.ChatSession
 
@@ -21,5 +21,11 @@ defmodule MinecraftEx.PacketHandlers.PlayTest do
 
     assert {:cont, new_socket} = Play.handle_packet(packet, socket)
     assert new_socket.assigns.chat_session == chat_session
+  end
+
+  test "accepts Client Tick End without changing the socket" do
+    socket = %Socket{assigns: %{state: :play}}
+
+    assert {:cont, ^socket} = Play.handle_packet(%ClientTickEnd{}, socket)
   end
 end
