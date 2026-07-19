@@ -3,7 +3,8 @@ defmodule MinecraftEx.PacketViewsTest do
 
   alias MinecraftEx.PacketViews
   alias MinecraftEx.Protocol
-  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
+  alias MinecraftEx.Server.ConfigurationPackets.UpdateTags
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry, RegistryTag, RegistryTags}
 
   ## Tests
 
@@ -40,5 +41,30 @@ defmodule MinecraftEx.PacketViewsTest do
 
     assert packet.registry_id == "dimension_type"
     assert packet.entries == [%RegistryEntry{id: "overworld"}]
+  end
+
+  test "renders generated registry tags" do
+    packet =
+      PacketViews.render(:update_tags, %{
+        registries: [
+          %{
+            registry_id: {"minecraft", "block"},
+            tags: [
+              %{tag_id: {"minecraft", "logs"}, entries: [1, 300]}
+            ]
+          }
+        ]
+      })
+
+    assert packet == %UpdateTags{
+             registries: [
+               %RegistryTags{
+                 registry_id: {"minecraft", "block"},
+                 tags: [
+                   %RegistryTag{id: {"minecraft", "logs"}, entries: [1, 300]}
+                 ]
+               }
+             ]
+           }
   end
 end

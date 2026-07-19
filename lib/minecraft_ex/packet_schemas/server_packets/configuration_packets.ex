@@ -5,7 +5,7 @@ defmodule MinecraftEx.Server.ConfigurationPackets do
 
   use ElvenGard.Network.PacketSerializer
 
-  alias MinecraftEx.Types.{Array, Identifier, KnownPack, RegistryEntry}
+  alias MinecraftEx.Types.{Array, Identifier, KnownPack, RegistryEntry, RegistryTags}
 
   ## Configuration packets
 
@@ -18,6 +18,12 @@ defmodule MinecraftEx.Server.ConfigurationPackets do
   defpacket 0x07, as: RegistryData do
     field :registry_id, Identifier
     field :entries, Array, type: RegistryEntry
+  end
+
+  # 0x0D Update Tags
+  @serializable true
+  defpacket 0x0D, as: UpdateTags do
+    field :registries, Array, type: RegistryTags
   end
 
   # 0x0E Known Packs

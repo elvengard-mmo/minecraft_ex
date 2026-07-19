@@ -17,6 +17,16 @@ defmodule MinecraftEx.Resources do
           entries: [Identifier.t()]
         }
 
+  @type vanilla_registry_tag :: %{
+          tag_id: Identifier.t(),
+          entries: [non_neg_integer()]
+        }
+
+  @type vanilla_registry_tags :: %{
+          registry_id: Identifier.t(),
+          tags: [vanilla_registry_tag()]
+        }
+
   ## Public API
 
   def favicon(), do: "data:image/png;base64," <> @favicon_base64
@@ -30,6 +40,21 @@ defmodule MinecraftEx.Resources do
         registry_id: parse_identifier(registry_id),
         entries: Enum.map(entries, &parse_identifier/1)
       }
+    end)
+  end
+
+  @spec vanilla_tags() :: [vanilla_registry_tags()]
+  def vanilla_tags() do
+    Enum.map(MinecraftData.tags(), fn registry_tags ->
+      %{registry_id: registry_id, tags: tags} = registry_tags
+
+      tags =
+        Enum.map(tags, fn tag ->
+          %{tag_id: tag_id, entries: entries} = tag
+          %{tag_id: parse_identifier(tag_id), entries: entries}
+        end)
+
+      %{registry_id: parse_identifier(registry_id), tags: tags}
     end)
   end
 

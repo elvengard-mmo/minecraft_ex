@@ -18,11 +18,12 @@ defmodule MinecraftEx.PacketViews do
   alias MinecraftEx.Server.ConfigurationPackets.{
     FinishConfiguration,
     KnownPacks,
-    RegistryData
+    RegistryData,
+    UpdateTags
   }
 
   alias MinecraftEx.Server.PlayPackets.{Login}
-  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry, RegistryTag, RegistryTags}
 
   ## Handshake views
 
@@ -92,6 +93,26 @@ defmodule MinecraftEx.PacketViews do
       registry_id: registry_id,
       entries: Enum.map(entries, &%RegistryEntry{id: &1})
     }
+  end
+
+  @impl true
+  def render(:update_tags, %{} = data) do
+    %{registries: registries} = data
+
+    registries =
+      Enum.map(registries, fn registry ->
+        %{registry_id: registry_id, tags: tags} = registry
+
+        tags =
+          Enum.map(tags, fn tag ->
+            %{tag_id: tag_id, entries: entries} = tag
+            %RegistryTag{id: tag_id, entries: entries}
+          end)
+
+        %RegistryTags{registry_id: registry_id, tags: tags}
+      end)
+
+    %UpdateTags{registries: registries}
   end
 
   ## Play views

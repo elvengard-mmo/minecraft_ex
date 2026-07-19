@@ -17,11 +17,21 @@ defmodule MinecraftEx.RegistryDataGeneratorTest do
       }
     ]
 
+    tags = [
+      %{
+        "registry_id" => "minecraft:block",
+        "tags" => [
+          %{"tag_id" => "minecraft:logs", "entries" => [4, 7, 9]}
+        ]
+      }
+    ]
+
     manifest =
       RegistryDataGenerator.build_manifest(
         "26.3",
         777,
-        registries
+        registries,
+        tags
       )
 
     assert manifest == %{
@@ -40,7 +50,8 @@ defmodule MinecraftEx.RegistryDataGeneratorTest do
                  "registry_id" => "minecraft:damage_type",
                  "entries" => ["minecraft:generic"]
                }
-             ]
+             ],
+             "tags" => tags
            }
 
     assert manifest |> RegistryDataGenerator.encode() |> JSON.decode!() == manifest

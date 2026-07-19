@@ -84,5 +84,10 @@ defmodule MinecraftEx.PacketHandlers.ConfigurationTest do
              {packet_id, _body} = VarInt.decode(packet)
              packet_id == 0x07
            end)
+
+    assert_receive {:sent, encoded_tags}
+    {_packet_length, packet} = VarInt.decode(encoded_tags)
+    {packet_id, _body} = VarInt.decode(packet)
+    assert packet_id == 0x0D
   end
 end

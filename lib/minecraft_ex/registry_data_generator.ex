@@ -1,12 +1,17 @@
 defmodule MinecraftEx.RegistryDataGenerator do
   @moduledoc """
-  Generates the synchronized vanilla registry manifest from an official Minecraft JAR.
+  Generates synchronized vanilla registries and network tags from an official Minecraft JAR.
   """
 
   @version_manifest_url "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
 
   @type registry :: %{String.t() => String.t() | [String.t()]}
-  @type manifest :: %{String.t() => String.t() | pos_integer() | [registry()]}
+  @type registry_tag :: %{String.t() => String.t() | [non_neg_integer()]}
+  @type registry_tags :: %{String.t() => String.t() | [registry_tag()]}
+
+  @type manifest :: %{
+          String.t() => String.t() | pos_integer() | [registry()] | [registry_tags()]
+        }
 
   ## Public API
 
@@ -27,19 +32,18 @@ defmodule MinecraftEx.RegistryDataGenerator do
     try do
       run_data_generator!(java_path, classpath, generated_path)
 
-      data_path = Path.join(generated_path, "data")
-
       %{
         minecraft_version: detected_version,
         protocol_version: protocol_version,
-        registries: registries
-      } = probe!(java_path, classpath, probe_path, data_path)
+        registries: registries,
+        tags: tags
+      } = probe!(java_path, classpath, probe_path, generated_path)
 
       if detected_version != minecraft_version do
         raise("Requested Minecraft #{minecraft_version}, but the JAR reports #{detected_version}")
       end
 
-      manifest = build_manifest(minecraft_version, protocol_version, registries)
+      manifest = build_manifest(minecraft_version, protocol_version, registries, tags)
 
       write_manifest!(manifest, output_path, Keyword.get(opts, :check, false))
       manifest
@@ -48,12 +52,13 @@ defmodule MinecraftEx.RegistryDataGenerator do
     end
   end
 
-  @spec build_manifest(String.t(), pos_integer(), [registry()]) :: manifest()
-  def build_manifest(minecraft_version, protocol_version, registries) do
+  @spec build_manifest(String.t(), pos_integer(), [registry()], [registry_tags()]) :: manifest()
+  def build_manifest(minecraft_version, protocol_version, registries, tags) do
     %{
       "minecraft_version" => minecraft_version,
       "protocol_version" => protocol_version,
-      "registries" => registries
+      "registries" => registries,
+      "tags" => tags
     }
   end
 
@@ -62,7 +67,8 @@ defmodule MinecraftEx.RegistryDataGenerator do
     %{
       "minecraft_version" => minecraft_version,
       "protocol_version" => protocol_version,
-      "registries" => registries
+      "registries" => registries,
+      "tags" => tags
     } = manifest
 
     registry_rows =
@@ -78,6 +84,19 @@ defmodule MinecraftEx.RegistryDataGenerator do
         ]
       end)
 
+    tag_rows =
+      Enum.map(tags, fn registry_tags ->
+        %{"registry_id" => registry_id, "tags" => tags} = registry_tags
+
+        [
+          "    {\"registry_id\":",
+          JSON.encode!(registry_id),
+          ",\"tags\":",
+          JSON.encode!(tags),
+          "}"
+        ]
+      end)
+
     IO.iodata_to_binary([
       "{\n",
       "  \"minecraft_version\": ",
@@ -88,6 +107,9 @@ defmodule MinecraftEx.RegistryDataGenerator do
       ",\n",
       "  \"registries\": [\n",
       Enum.intersperse(registry_rows, ",\n"),
+      "\n  ],\n",
+      "  \"tags\": [\n",
+      Enum.intersperse(tag_rows, ",\n"),
       "\n  ]\n",
       "}\n"
     ])
@@ -318,15 +340,15 @@ defmodule MinecraftEx.RegistryDataGenerator do
     :ok
   end
 
-  defp probe!(java_path, classpath, probe_path, data_path) do
-    args = ["--class-path", classpath, probe_path, data_path]
+  defp probe!(java_path, classpath, probe_path, generated_path) do
+    args = ["--class-path", classpath, probe_path, generated_path]
     output = command!(java_path, args, "Minecraft registry probe")
 
     probe =
       output
       |> String.split("\n")
-      |> Enum.reduce(%{registries: []}, fn line, probe ->
-        case String.split(line, "\t", parts: 2) do
+      |> Enum.reduce(%{registries: [], tags: []}, fn line, probe ->
+        case String.split(line, "\t", parts: 4) do
           ["__MINECRAFT_EX_VERSION__", version] ->
             Map.put(probe, :minecraft_version, version)
 
@@ -343,7 +365,15 @@ defmodule MinecraftEx.RegistryDataGenerator do
             registry = %{registry | "entries" => [entry | entries]}
             %{probe | registries: [registry | registries]}
 
-          [_line] ->
+          ["__MINECRAFT_EX_TAG__", registry_id, tag_id, entries] ->
+            tag = %{
+              "tag_id" => tag_id,
+              "entries" => parse_tag_entries(entries)
+            }
+
+            add_registry_tag(probe, registry_id, tag)
+
+          _fields ->
             probe
         end
       end)
@@ -356,15 +386,49 @@ defmodule MinecraftEx.RegistryDataGenerator do
         %{registry | "entries" => Enum.reverse(entries)}
       end)
 
+    tags =
+      probe.tags
+      |> Enum.reverse()
+      |> Enum.map(fn registry_tags ->
+        %{"tags" => tags} = registry_tags
+        %{registry_tags | "tags" => Enum.reverse(tags)}
+      end)
+
     if registries == [] do
       raise("Minecraft registry probe returned no synchronized registries")
+    end
+
+    if tags == [] do
+      raise("Minecraft registry probe returned no network tags")
     end
 
     %{
       minecraft_version: Map.fetch!(probe, :minecraft_version),
       protocol_version: Map.fetch!(probe, :protocol_version),
-      registries: registries
+      registries: registries,
+      tags: tags
     }
+  end
+
+  defp parse_tag_entries(entries) do
+    case entries do
+      "" -> []
+      entries -> entries |> String.split(",") |> Enum.map(&String.to_integer/1)
+    end
+  end
+
+  defp add_registry_tag(%{} = probe, registry_id, tag) do
+    %{tags: registry_tags} = probe
+
+    case registry_tags do
+      [%{"registry_id" => ^registry_id, "tags" => tags} = registry | registries] ->
+        registry = %{registry | "tags" => [tag | tags]}
+        %{probe | tags: [registry | registries]}
+
+      _registry_tags ->
+        registry = %{"registry_id" => registry_id, "tags" => [tag]}
+        %{probe | tags: [registry | registry_tags]}
+    end
   end
 
   defp command!(executable, args, operation) do

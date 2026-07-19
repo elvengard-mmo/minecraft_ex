@@ -6,10 +6,11 @@ defmodule MinecraftEx.Server.ConfigurationPacketsTest do
   alias MinecraftEx.Server.ConfigurationPackets.{
     FinishConfiguration,
     KnownPacks,
-    RegistryData
+    RegistryData,
+    UpdateTags
   }
 
-  alias MinecraftEx.Types.{KnownPack, RegistryEntry}
+  alias MinecraftEx.Types.{KnownPack, RegistryEntry, RegistryTag, RegistryTags}
 
   ## Tests
 
@@ -40,5 +41,23 @@ defmodule MinecraftEx.Server.ConfigurationPacketsTest do
 
     assert IO.iodata_to_binary(encoded) ==
              <<24, "minecraft:dimension_type", 1, 19, "minecraft:overworld", 0>>
+  end
+
+  test "serializes Update Tags with registry entry ids on its 26.2 packet id" do
+    packet = %UpdateTags{
+      registries: [
+        %RegistryTags{
+          registry_id: {"minecraft", "block"},
+          tags: [
+            %RegistryTag{id: {"minecraft", "logs"}, entries: [1, 300]}
+          ]
+        }
+      ]
+    }
+
+    assert {0x0D, encoded} = UpdateTags.serialize(packet, %Socket{})
+
+    assert IO.iodata_to_binary(encoded) ==
+             <<1, 15, "minecraft:block", 1, 14, "minecraft:logs", 2, 1, 0xAC, 0x02>>
   end
 end

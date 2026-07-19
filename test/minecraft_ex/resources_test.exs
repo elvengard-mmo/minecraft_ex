@@ -23,4 +23,20 @@ defmodule MinecraftEx.ResourcesTest do
                {"minecraft", "the_nether"}
              ]
   end
+
+  test "loads resolved vanilla network tags with numeric protocol ids" do
+    registry_tags = Resources.vanilla_tags()
+
+    assert length(registry_tags) == 15
+    assert Enum.sum(Enum.map(registry_tags, &length(&1.tags))) == 697
+
+    block_tags = Enum.find(registry_tags, &(&1.registry_id == {"minecraft", "block"}))
+    logs = Enum.find(block_tags.tags, &(&1.tag_id == {"minecraft", "logs"}))
+
+    assert length(logs.entries) == 44
+    assert Enum.take(logs.entries, 4) == [55, 77, 66, 85]
+
+    dialog_tags = Enum.find(registry_tags, &(&1.registry_id == {"minecraft", "dialog"}))
+    assert Enum.all?(dialog_tags.tags, &(&1.entries == []))
+  end
 end

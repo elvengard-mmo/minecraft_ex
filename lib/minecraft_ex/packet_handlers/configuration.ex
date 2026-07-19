@@ -59,6 +59,14 @@ defmodule MinecraftEx.PacketHandlers.Configuration do
     end)
 
     Logger.info("Sent #{length(registries)} vanilla registries")
+
+    tags = Resources.vanilla_tags()
+    render = PacketViews.render(:update_tags, %{registries: tags})
+    :ok = Socket.send(new_socket, render)
+
+    tag_count = Enum.sum(Enum.map(tags, &length(&1.tags)))
+    Logger.info("Sent #{tag_count} vanilla tags across #{length(tags)} registries")
+
     {:cont, new_socket}
   end
 

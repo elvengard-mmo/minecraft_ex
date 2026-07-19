@@ -14,7 +14,7 @@ mix minecraft.registry_data.generate VERSION
 The task reuses a matching local Minecraft installation when available. Missing JARs and
 libraries are downloaded from Mojang, verified by SHA-1, and cached under the Mix build path.
 It extracts the Minecraft version, protocol version, synchronized registries, entry identifiers,
-and their wire order directly from that distribution.
+their wire order, and fully resolved network tags directly from that distribution.
 
 Verify the committed manifest without rewriting it:
 
