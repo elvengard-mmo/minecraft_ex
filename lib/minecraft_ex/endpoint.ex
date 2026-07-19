@@ -9,10 +9,10 @@ defmodule MinecraftEx.Endpoint do
 
   ## Callbacks
 
-  @impl true
+  @impl ElvenGard.Network.Endpoint
   def handle_start(config) do
-    host = get_in(config, [:transport_opts, :socket_opts, :ip])
-    port = get_in(config, [:transport_opts, :socket_opts, :port])
-    Logger.info("MinecraftEx started on #{:inet.ntoa(host)}:#{port}")
+    host = Keyword.fetch!(config, :ip)
+    port = Keyword.fetch!(config, :port)
+    Logger.info("MinecraftEx started on #{host}:#{port}")
   end
 end

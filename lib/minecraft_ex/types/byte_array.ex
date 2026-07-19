@@ -49,7 +49,7 @@ defmodule MinecraftEx.Types.ByteArray do
 
   defp maybe_decode_prefix(data, true) do
     {length, rest} = VarInt.decode(data)
-    <<array::binary-size(length), rest::bitstring>> = rest
+    <<array::binary-size(^length), rest::bitstring>> = rest
     {array, rest}
   end
 

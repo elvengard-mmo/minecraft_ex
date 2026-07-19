@@ -22,7 +22,7 @@ defmodule MinecraftEx.PacketViews do
 
   @impl true
   def render(:status_response, %{status: status}) do
-    %StatusResponse{json: Poison.encode!(status)}
+    %StatusResponse{json: JSON.encode!(status)}
   end
 
   @impl true

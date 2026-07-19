@@ -26,7 +26,7 @@ defmodule MinecraftEx.Types.MCString do
 
     if length > 32767, do: raise("max string size is 32767")
 
-    <<string::binary-size(length), rest::bitstring>> = rest
+    <<string::binary-size(^length), rest::bitstring>> = rest
     {string, rest}
   end
 

@@ -9,6 +9,8 @@ defmodule MinecraftEx.Endpoint.NetworkCodec do
   alias MinecraftEx.ClientPackets
   alias MinecraftEx.Types.VarInt
 
+  ## NetworkCodec callbacks
+
   @impl true
   def next(<<>>, _socket), do: {nil, <<>>}
 
@@ -18,7 +20,7 @@ defmodule MinecraftEx.Endpoint.NetworkCodec do
     # Here we must decrypt packet sizz byte per byte
     # Because the AES iv is statefull
     {size, rest} = maybe_decrypt_size(message, maybe_enc_key)
-    <<maybe_cipher::binary-size(size), rest::binary>> = rest
+    <<maybe_cipher::binary-size(^size), rest::binary>> = rest
     data = maybe_decrypt(maybe_cipher, maybe_enc_key)
 
     {data, rest}
@@ -32,7 +34,7 @@ defmodule MinecraftEx.Endpoint.NetworkCodec do
 
   @impl true
   def encode(struct, socket) when is_struct(struct) do
-    {packet_id, params} = struct.__struct__.serialize(struct)
+    {packet_id, params} = struct.__struct__.serialize(struct, socket)
     encode([VarInt.encode(packet_id), params], socket)
   end
 
@@ -46,11 +48,11 @@ defmodule MinecraftEx.Endpoint.NetworkCodec do
 
   ## Private functions
 
-  # For the Initial Vector (IV) and AES setup, both sides use the shared 
+  # For the Initial Vector (IV) and AES setup, both sides use the shared
   # secret as both the IV and the key.
   #
-  # Note that the AES cipher is updated continuously, not finished and 
-  # restarted every packet. 
+  # Note that the AES cipher is updated continuously, not finished and
+  # restarted every packet.
   defp maybe_encrypt(data, enc_key) do
     crypto_state = Process.get(:enc_crypto_state)
 

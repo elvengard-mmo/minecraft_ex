@@ -67,7 +67,7 @@ defmodule MinecraftEx.PacketHandlers.Login do
   end
 
   def handle_packet(packet, socket) do
-    Logger.warn("no handler for #{inspect(packet)} in #{inspect(__MODULE__)}")
+    Logger.warning("no handler for #{inspect(packet)} in #{inspect(__MODULE__)}")
     {:halt, socket}
   end
 

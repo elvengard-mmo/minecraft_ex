@@ -13,10 +13,10 @@ defmodule MinecraftEx.Mojang do
     public_key = Crypto.get_public_der()
     login_hash = Crypto.sha1(server_id <> secret <> public_key)
 
-    url = 'https://sessionserver.mojang.com/session/minecraft/hasJoined'
+    url = ~c"https://sessionserver.mojang.com/session/minecraft/hasJoined"
     qs = URI.encode_query(%{username: username, serverId: login_hash})
-    full_url = '#{url}?#{qs}'
-    headers = [{'accept', 'application/json'}]
+    full_url = ~c"#{url}?#{qs}"
+    headers = [{~c"accept", ~c"application/json"}]
 
     http_request_opts = [
       ssl: [
@@ -29,8 +29,12 @@ defmodule MinecraftEx.Mojang do
     ]
 
     case :httpc.request(:get, {full_url, headers}, http_request_opts, []) do
-      {:ok, {{_, 200, _}, _, body}} -> {:ok, Poison.decode!(body)}
-      _ -> {:error, :invalid_session}
+      {:ok, {{_, 200, _}, _, body}} ->
+        data = body |> IO.iodata_to_binary() |> JSON.decode!()
+        {:ok, data}
+
+      _ ->
+        {:error, :invalid_session}
     end
   end
 end

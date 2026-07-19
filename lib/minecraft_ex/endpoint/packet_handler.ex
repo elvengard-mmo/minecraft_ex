@@ -3,9 +3,13 @@ defmodule MinecraftEx.Endpoint.PacketHandler do
   Documentation for MinecraftEx.Endpoint.PacketHandler
   """
 
+  @behaviour ElvenGard.Network.PacketHandler
+
   require Logger
 
-  ## Dynamic dispatcher
+  ## PacketHandler callbacks
+
+  @impl true
   def handle_packet(%struct{} = packet, socket) do
     case Module.split(struct) do
       ["MinecraftEx", "Client", "HandshakePackets" | _] ->

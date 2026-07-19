@@ -1,9 +1,9 @@
-defmodule MinecraftEx.Endpoint.Protocol do
+defmodule MinecraftEx.Endpoint.SocketHandler do
   @moduledoc """
-  Documentation for MinecraftEx.Endpoint.Protocol
+  Documentation for MinecraftEx.Endpoint.SocketHandler
   """
 
-  use ElvenGard.Network.Endpoint.Protocol
+  use ElvenGard.Network.SocketHandler
 
   require Logger
 
@@ -11,15 +11,14 @@ defmodule MinecraftEx.Endpoint.Protocol do
 
   alias ElvenGard.Network.Socket
 
-  ## Callbacks
+  ## SocketHandler callbacks
 
   @impl true
   def handle_init(%Socket{} = socket) do
     Logger.info("New connection: #{socket.id}")
     Logger.metadata(socket_id: socket.id)
 
-    %Socket{transport: transport, transport_pid: transport_pid} = socket
-    :ok = transport.setopts(transport_pid, packet: :raw, reuseaddr: true)
+    :ok = Socket.setopts(socket, packet: :raw, reuseaddr: true)
 
     {:ok, assign(socket, state: :init, token: nil, enc_key: nil)}
   end
